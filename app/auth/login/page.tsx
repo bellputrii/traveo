@@ -25,7 +25,7 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         // 🔹 Login logic
-        const response = await fetch("http://localhost:3001/api/v1/login", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/x-www-form-urlencoded",
