@@ -58,7 +58,7 @@ export default function ELearningPage() {
     { id: 'design', name: 'Desain' }
   ]
 
-  // Data untuk paket berlangganan - disesuaikan dengan konteks elearning
+  // Data untuk paket berlangganan
   const plans = [
     {
       name: "Paket 1 Bulan",
@@ -122,7 +122,7 @@ export default function ELearningPage() {
     }
   ]
 
-  // Data testimonials - disesuaikan dengan konteks elearning
+  // Data testimonials
   const testimonials = [
     {
       text: "Dengan paket berlangganan, saya bisa akses semua kursus dan materi pembelajaran. Sangat membantu persiapan lomba!",
@@ -149,11 +149,6 @@ export default function ELearningPage() {
     router.push(`/elearning/${courseId}`)
   }
 
-  // Fungsi untuk navigasi ke halaman pricing
-  const handleGoToPricing = () => {
-    router.push('/pricing')
-  }
-
   // Fungsi untuk handle pemilihan paket
   const handlePackageSelect = (link: string) => {
     window.open(link, '_blank', 'noopener,noreferrer')
@@ -168,13 +163,12 @@ export default function ELearningPage() {
     setShowAllCourses(true)
   }
 
-  // Fetch data courses dari API dengan struktur yang rapi
+  // Fetch data courses dari API
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true)
         
-        // Ambil token dari localStorage
         const token = localStorage.getItem("token")
         
         if (!token) {
@@ -190,13 +184,11 @@ export default function ELearningPage() {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
-          },
-          redirect: "follow" as RequestRedirect
+          }
         })
 
         if (!response.ok) {
           if (response.status === 401) {
-            // Token expired atau invalid
             localStorage.removeItem("token")
             setError('Sesi telah berakhir. Silakan login kembali.')
             setIsAuthenticated(false)
@@ -209,7 +201,6 @@ export default function ELearningPage() {
         const result: ApiResponse = await response.json()
         
         if (result.success && result.data.classes) {
-          // Transform data dari API ke format yang diharapkan komponen
           const transformedCourses = result.data.classes.map((classItem, index) => ({
             id: classItem.id,
             category: mapCategory(classItem.categoryId),
@@ -231,7 +222,6 @@ export default function ELearningPage() {
       } catch (err) {
         console.error('Error fetching courses:', err)
         setError('Gagal memuat data kursus. Silakan coba lagi.')
-        // Fallback ke data statis jika API error
         setCourses(getFallbackCourses())
       } finally {
         setLoading(false)
@@ -333,28 +323,6 @@ export default function ELearningPage() {
       level: 'Lanjutan',
       rating: 4.7,
       instructor: 'Prof. Ahmad Rahman'
-    },
-    {
-      id: 7,
-      category: 'research',
-      title: 'Metodologi Penelitian Kualitatif',
-      image: '/karya-tulis-ilmiah.png',
-      duration: '6 Jam',
-      participants: '270',
-      level: 'Menengah',
-      rating: 4.6,
-      instructor: 'Dr. Lisa Santoso'
-    },
-    {
-      id: 8,
-      category: 'design',
-      title: 'Prinsip Desain Visual yang Efektif',
-      image: '/poster.png',
-      duration: '4 Jam',
-      participants: '380',
-      level: 'Pemula',
-      rating: 4.5,
-      instructor: 'Maya Desain'
     }
   ]
 
@@ -367,10 +335,10 @@ export default function ELearningPage() {
   const displayedCourses = showAllCourses ? filteredCourses : filteredCourses.slice(0, 6)
 
   const stats = [
-    { value: '180+', label: 'Video Pembelajaran', icon: <Video className="w-5 h-5 sm:w-7 sm:h-7" /> },
-    { value: '90+', label: 'Modul Belajar', icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { value: `${courses.reduce((acc, course) => acc + parseInt(course.participants), 0)}+`, label: 'Peserta Aktif', icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { value: '300+', label: 'Pemenang Kompetisi', icon: <Award className="w-5 h-5 sm:w-6 sm:h-6" /> },
+    { value: '180+', label: 'Video Pembelajaran', icon: <Video className="w-6 h-6" /> },
+    { value: '90+', label: 'Modul Belajar', icon: <FileText className="w-6 h-6" /> },
+    { value: `${courses.reduce((acc, course) => acc + parseInt(course.participants), 0)}+`, label: 'Peserta Aktif', icon: <Users className="w-6 h-6" /> },
+    { value: '300+', label: 'Pemenang Kompetisi', icon: <Award className="w-6 h-6" /> },
   ]
 
   const learningPath = [
@@ -378,45 +346,45 @@ export default function ELearningPage() {
       step: '1',
       title: 'Belajar Interaktif',
       desc: 'Pelajari konten-konten berkualitas dan tonton video dari mentor berpengalaman.',
-      icon: <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
+      icon: <BookOpen className="w-6 h-6" />
     },
     {
       step: '2',
       title: 'Praktik Langsung',
       desc: 'Implementasikan materi dengan latihan dan studi kasus nyata.',
-      icon: <Play className="w-6 h-6 sm:w-7 sm:h-7" />
+      icon: <Play className="w-6 h-6" />
     },
     {
       step: '3',
       title: 'Raih Prestasi',
       desc: 'Siap berkompetisi dan raih prestasi terbaik dengan bekal yang matang!',
-      icon: <Award className="w-6 h-6 sm:w-7 sm:h-7" />
+      icon: <Award className="w-6 h-6" />
     }
   ]
 
   return (
     <>
       <LayoutNavbar>
-        <div className="flex flex-col gap-12 md:gap-16 lg:gap-20 px-4 sm:px-6 lg:px-8 pt-16 md:pt-20">
+        <div className="flex flex-col gap-12 md:gap-16 px-4 sm:px-6 pt-16 md:pt-20">
           {/* Hero Section */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-6 md:gap-8 bg-blue-700 rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-12 text-white">
-              <div className="space-y-4 md:space-y-6 order-2 lg:order-1">
-                <div className="flex items-center gap-2 bg-blue-600 rounded-full px-3 py-1 md:px-4 md:py-2 w-fit">
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-blue-700 rounded-xl p-6 text-white">
+              <div className="space-y-4 order-2 lg:order-1">
+                <div className="flex items-center gap-2 bg-blue-600 rounded-full px-3 py-1 w-fit">
                   <BookOpen className="w-4 h-4" />
                   <span className="text-sm font-medium">E-Learning Platform</span>
                 </div>
                 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
                   Tingkatkan Skill & Raih Prestasi Bersama E-Learning
                 </h1>
                 
-                <p className="text-blue-100 text-base md:text-lg leading-relaxed">
+                <p className="text-blue-100 text-base leading-relaxed">
                   Pelajari berbagai materi kuliah, lomba, dan keterampilan kompetitif.  
                   Belajar fleksibel dengan video, modul belajar, serta forum diskusi interaktif.
                 </p>
 
-                <div className="space-y-2 md:space-y-3">
+                <div className="space-y-2">
                   {[
                     "Belajar fleksibel di mana saja & kapan saja",
                     "Modul dikurasi langsung oleh mentor berpengalaman",
@@ -424,22 +392,22 @@ export default function ELearningPage() {
                   ].map((item, index) => (
                     <div key={index} className="flex items-center gap-3">
                       <CheckCircle className="text-green-300 flex-shrink-0" size={18} />
-                      <span className="text-blue-100 text-sm md:text-base">{item}</span>
+                      <span className="text-blue-100 text-sm">{item}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 md:pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button 
                     onClick={() => document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="bg-white text-blue-700 px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg flex items-center gap-2 justify-center"
+                    className="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-blue-50 shadow-md flex items-center gap-2 justify-center"
                   >
                     Jelajahi Kursus
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="border-2 border-white text-white px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-white hover:text-blue-700"
+                    className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-white hover:text-blue-700"
                   >
                     Lihat Paket Harga
                   </button>
@@ -447,20 +415,20 @@ export default function ELearningPage() {
               </div>
 
               <div className="flex justify-center lg:justify-end order-1 lg:order-2">
-                <div className="relative w-full max-w-sm md:max-w-md">
+                <div className="relative w-full max-w-sm">
                   <img
                     src="/e-learning.png"
                     alt="E-Learning"
-                    className="rounded-xl md:rounded-2xl object-cover shadow-lg w-full h-auto"
+                    className="rounded-xl object-cover shadow-lg w-full h-auto"
                   />
-                  <div className="absolute -bottom-3 -left-3 bg-white rounded-xl md:rounded-2xl p-3 md:p-4 shadow-md">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="bg-green-100 p-1 md:p-2 rounded-lg">
-                        <Award className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+                  <div className="absolute -bottom-3 -left-3 bg-white rounded-xl p-3 shadow-md">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-green-100 p-2 rounded-lg">
+                        <Award className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800 text-sm md:text-base">300+</p>
-                        <p className="text-xs md:text-sm text-gray-600">Pemenang Lomba</p>
+                        <p className="font-semibold text-gray-800 text-sm">300+</p>
+                        <p className="text-xs text-gray-600">Pemenang Lomba</p>
                       </div>
                     </div>
                   </div>
@@ -471,19 +439,19 @@ export default function ELearningPage() {
 
           {/* Statistik Section */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg md:rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 group hover:scale-105 cursor-pointer"
+                  className="bg-white rounded-lg p-4 shadow-md border border-gray-200"
                 >
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <div className="bg-blue-100 p-2 md:p-3 rounded-lg text-blue-700 transition-all duration-300 group-hover:bg-blue-700 group-hover:text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-lg text-blue-700">
                       {stat.icon}
                     </div>
                     <div>
-                      <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">{stat.value}</h3>
-                      <p className="text-gray-600 text-xs md:text-sm">{stat.label}</p>
+                      <h3 className="text-lg font-bold text-gray-800">{stat.value}</h3>
+                      <p className="text-gray-600 text-xs">{stat.label}</p>
                     </div>
                   </div>
                 </div>
@@ -493,24 +461,24 @@ export default function ELearningPage() {
 
           {/* Kategori Kursus */}
           <section id="courses-section" className="w-full max-w-7xl mx-auto">
-            <div className="text-center mb-6 md:mb-8">
-              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 md:mb-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 Kategori Kursus
               </h2>
-              <p className="text-gray-700 max-w-2xl mx-auto text-sm md:text-base">
+              <p className="text-gray-700 max-w-2xl mx-auto text-sm">
                 Pilih kategori yang sesuai dengan minat dan kebutuhan belajarmu
               </p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8 md:mb-12">
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
               {categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => {
                     setActiveCategory(category.id)
-                    setShowAllCourses(false) // Reset show all ketika ganti kategori
+                    setShowAllCourses(false)
                   }}
-                  className={`px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl font-medium transition-all duration-200 text-sm md:text-base ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
                     activeCategory === category.id
                       ? 'bg-blue-700 text-white shadow-md'
                       : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
@@ -549,36 +517,38 @@ export default function ELearningPage() {
             {/* Kursus Grid */}
             {!loading && !error && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {displayedCourses.map((course) => (
                     <div
                       key={course.id}
-                      className="bg-white rounded-lg md:rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 group hover:scale-105 cursor-pointer"
+                      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-colors border border-gray-200"
                     >
-                      <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden">
+                      <div className="relative h-40 overflow-hidden">
                         <Image
                           src={course.image}
                           alt={course.title}
-                          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                          width={400}
+                          height={160}
+                          className="object-cover w-full h-full"
                         />
                         {course.featured && (
                           <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
                             Featured
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button 
                             onClick={() => handleViewCourseDetail(course.id)}
-                            className="bg-white text-blue-700 p-2 md:p-3 rounded-full hover:bg-blue-50 transition-colors"
+                            className="bg-white text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"
                           >
-                            <Eye className="w-5 h-5 md:w-6 md:h-6" />
+                            <Eye className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
                       
-                      <div className="p-4 md:p-6 space-y-3 md:space-y-4">
+                      <div className="p-4 space-y-3">
                         <div className="flex justify-between items-start">
-                          <span className="text-xs md:text-sm text-blue-700 font-semibold bg-blue-100 px-2 py-1 md:px-3 md:py-1 rounded-full">
+                          <span className="text-xs text-blue-700 font-semibold bg-blue-100 px-2 py-1 rounded-full">
                             {course.category.charAt(0).toUpperCase() + course.category.slice(1)}
                           </span>
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -590,36 +560,36 @@ export default function ELearningPage() {
                           </span>
                         </div>
 
-                        <h3 className="text-base md:text-lg font-bold text-gray-800 leading-tight group-hover:text-blue-700 transition-colors">
+                        <h3 className="text-base font-bold text-gray-800 leading-tight">
                           {course.title}
                         </h3>
 
                         <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className="font-medium text-xs md:text-sm">{course.instructor}</span>
+                          <span className="font-medium text-xs">{course.instructor}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs md:text-sm text-gray-600">
-                          <div className="flex items-center gap-3 md:gap-4">
+                        <div className="flex items-center justify-between text-xs text-gray-600">
+                          <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 md:w-4 md:h-4" />
+                              <Clock className="w-3 h-3" />
                               <span>{course.duration}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3 md:w-4 md:h-4" />
+                              <Users className="w-3 h-3" />
                               <span>{course.participants}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 fill-current" />
+                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
                             <span className="font-semibold">{course.rating}</span>
                           </div>
                         </div>
 
                         <button 
                           onClick={() => handleViewCourseDetail(course.id)}
-                          className="w-full bg-blue-700 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:bg-blue-800 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 text-sm md:text-base"
+                          className="w-full bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors hover:bg-blue-800 flex items-center justify-center gap-2 text-sm"
                         >
-                          <Eye className="w-3 h-3 md:w-4 md:h-4" />
+                          <Eye className="w-3 h-3" />
                           Lihat Detail Kelas
                         </button>
                       </div>
@@ -629,12 +599,12 @@ export default function ELearningPage() {
 
                 {/* Show More Button */}
                 {!showAllCourses && filteredCourses.length > 6 && (
-                  <div className="text-center mt-8 md:mt-12">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl md:rounded-2xl p-8 max-w-2xl mx-auto">
-                      <h3 className="text-white text-lg md:text-xl font-bold mb-3">
+                  <div className="text-center mt-8">
+                    <div className="bg-blue-700 rounded-xl p-6 max-w-2xl mx-auto">
+                      <h3 className="text-white text-lg font-bold mb-3">
                         {isAuthenticated ? 'Temukan Lebih Banyak Kursus' : 'Login untuk Mengakses Semua Kursus'}
                       </h3>
-                      <p className="text-blue-100 mb-6 text-sm md:text-base">
+                      <p className="text-blue-100 mb-6 text-sm">
                         {isAuthenticated 
                           ? `Masih ada ${filteredCourses.length - 6} kursus lainnya yang menunggu untuk dipelajari!`
                           : 'Login untuk mengakses semua kursus premium dan fitur lengkap lainnya.'
@@ -642,9 +612,9 @@ export default function ELearningPage() {
                       </p>
                       <button 
                         onClick={handleShowMoreCourses}
-                        className="bg-white text-blue-700 px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg flex items-center gap-2 justify-center mx-auto"
+                        className="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-blue-50 shadow-md flex items-center gap-2 justify-center mx-auto"
                       >
-                        <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
+                        <ChevronDown className="w-4 h-4" />
                         {isAuthenticated ? 'Tampilkan Semua Kursus' : 'Login Sekarang'}
                       </button>
                     </div>
@@ -656,9 +626,9 @@ export default function ELearningPage() {
                   <div className="text-center mt-8">
                     <button 
                       onClick={() => setShowAllCourses(false)}
-                      className="bg-gray-100 text-gray-700 px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:bg-gray-200 hover:scale-105 active:scale-95 flex items-center gap-2 justify-center mx-auto"
+                      className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-gray-200 flex items-center gap-2 justify-center mx-auto"
                     >
-                      <ChevronDown className="w-4 h-4 md:w-5 md:h-5 transform rotate-180" />
+                      <ChevronDown className="w-4 h-4 transform rotate-180" />
                       Tampilkan Lebih Sedikit
                     </button>
                   </div>
@@ -680,30 +650,30 @@ export default function ELearningPage() {
             )}
           </section>
 
-          {/* Pricing Section - Ditambahkan dari ementoring */}
+          {/* Pricing Section */}
           <section id="packages-section" className="w-full max-w-7xl mx-auto">
-            <div className="text-center mb-8 md:mb-10">
-              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-800 mb-3 md:mb-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-blue-800 mb-3">
                 Paket Berlangganan E-Learning
               </h2>
-              <p className="text-gray-600 text-sm md:text-base max-w-2xl mx-auto px-4">
+              <p className="text-gray-600 text-sm max-w-2xl mx-auto">
                 Akses semua kursus premium dengan paket berlangganan bulanan. Belajar tanpa batas dan raih prestasi terbaikmu!
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {plans.map((plan, index) => (
                 <div
                   key={index}
-                  className={`bg-white rounded-xl md:rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2 ${
+                  className={`bg-white rounded-xl p-6 shadow-lg border-2 ${
                     plan.popular 
-                      ? 'border-blue-600 relative transform scale-105' 
-                      : 'border-gray-200 hover:scale-105'
-                  } group`}
+                      ? 'border-blue-600 relative' 
+                      : 'border-gray-200'
+                  }`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                      <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
                         Paling Populer
                       </span>
                     </div>
@@ -713,8 +683,8 @@ export default function ELearningPage() {
                     <h3 className="text-xl font-bold text-gray-800 mb-2">{plan.name}</h3>
                     <div className="flex flex-col items-center gap-2 mb-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl line-through text-gray-400">{plan.originalPrice}</span>
-                        <span className="text-3xl font-bold text-blue-600">{plan.price}</span>
+                        <span className="text-xl line-through text-gray-400">{plan.originalPrice}</span>
+                        <span className="text-2xl font-bold text-blue-600">{plan.price}</span>
                       </div>
                       <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-sm font-semibold">
                         Hemat {plan.discount}
@@ -732,7 +702,7 @@ export default function ELearningPage() {
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-center gap-3 text-gray-600">
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}
@@ -740,9 +710,9 @@ export default function ELearningPage() {
 
                   <button 
                     onClick={() => handlePackageSelect(plan.link)}
-                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
+                    className={`w-full py-3 rounded-lg font-semibold transition-colors ${
                       plan.popular
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
@@ -753,7 +723,7 @@ export default function ELearningPage() {
             </div>
 
             <div className="text-center mt-8">
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 max-w-2xl mx-auto">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
                 <p className="text-green-700 font-semibold">
                   💫 Spesial Diskon 70%! Harga normal Rp 100.000/bulan menjadi Rp 30.000/bulan
                 </p>
@@ -764,25 +734,25 @@ export default function ELearningPage() {
             </div>
           </section>
 
-          {/* Testimonials Section - Ditambahkan dari ementoring */}
+          {/* Testimonials Section */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-12 text-white">
-              <div className="text-center mb-8 md:mb-10">
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">
+            <div className="bg-blue-700 rounded-xl p-6 text-white">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-3">
                   Testimoni Peserta E-Learning
                 </h2>
-                <p className="text-blue-100 text-sm md:text-base max-w-2xl mx-auto px-4">
+                <p className="text-blue-100 text-sm max-w-2xl mx-auto">
                   Dengarkan pengalaman langsung dari peserta yang telah merasakan manfaat program berlangganan kami
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {testimonials.map((testimonial, index) => (
                   <div
                     key={index}
-                    className="bg-blue-600/50 rounded-xl md:rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 group hover:scale-105 backdrop-blur-sm"
+                    className="bg-blue-600 rounded-lg p-4 shadow-lg"
                   >
-                    <div className="flex gap-1 mb-4">
+                    <div className="flex gap-1 mb-3">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star 
                           key={i} 
@@ -790,12 +760,12 @@ export default function ELearningPage() {
                         />
                       ))}
                     </div>
-                    <p className="text-blue-100 italic mb-4 leading-relaxed text-sm md:text-base">
+                    <p className="text-blue-100 italic mb-3 leading-relaxed text-sm">
                       &quot;{testimonial.text}&quot;
                     </p>
                     <div>
-                      <p className="font-semibold text-sm md:text-base">{testimonial.name}</p>
-                      <p className="text-blue-200 text-xs md:text-sm">{testimonial.role}</p>
+                      <p className="font-semibold text-sm">{testimonial.name}</p>
+                      <p className="text-blue-200 text-xs">{testimonial.role}</p>
                     </div>
                   </div>
                 ))}
@@ -805,30 +775,30 @@ export default function ELearningPage() {
 
           {/* Alur Pembelajaran */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-blue-100 rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-12">
-              <div className="text-center mb-8 md:mb-12">
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 md:mb-4">
+            <div className="bg-blue-100 rounded-xl p-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
                   Alur Pembelajaran
                 </h2>
-                <p className="text-gray-700 max-w-2xl mx-auto text-sm md:text-base">
+                <p className="text-gray-700 max-w-2xl mx-auto text-sm">
                   Ikuti langkah-langkah sistematis untuk mencapai kesuksesan dalam kompetisi
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {learningPath.map((step, index) => (
                   <div
                     key={index}
-                    className="bg-white rounded-lg md:rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-all duration-300 group hover:scale-105 text-center cursor-pointer"
+                    className="bg-white rounded-lg p-4 shadow-md text-center"
                   >
-                    <div className="bg-blue-700 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-base md:text-lg font-bold mb-3 md:mb-4 mx-auto transition-all duration-300 group-hover:scale-110">
+                    <div className="bg-blue-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-base font-bold mb-3 mx-auto">
                       {step.step}
                     </div>
-                    <div className="bg-blue-200 text-blue-700 p-2 md:p-3 rounded-lg w-fit mx-auto mb-3 md:mb-4 transition-all duration-300 group-hover:bg-blue-700 group-hover:text-white">
+                    <div className="bg-blue-200 text-blue-700 p-2 rounded-lg w-fit mx-auto mb-3">
                       {step.icon}
                     </div>
-                    <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3 text-gray-800">{step.title}</h3>
-                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{step.desc}</p>
+                    <h3 className="font-bold text-base mb-2 text-gray-800">{step.title}</h3>
+                    <p className="text-gray-600 leading-relaxed text-sm">{step.desc}</p>
                   </div>
                 ))}
               </div>
@@ -837,24 +807,24 @@ export default function ELearningPage() {
 
           {/* CTA Section */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-blue-700 rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-12 text-white text-center">
-              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">
+            <div className="bg-blue-700 rounded-xl p-6 text-white text-center">
+              <h2 className="text-2xl font-bold mb-3">
                 Siap Mengembangkan Potensimu?
               </h2>
-              <p className="text-blue-100 mb-6 md:mb-8 max-w-2xl mx-auto text-sm md:text-base lg:text-lg">
+              <p className="text-blue-100 mb-6 max-w-2xl mx-auto text-sm">
                 Bergabung dengan ribuan mahasiswa lainnya dan raih prestasi terbaik melalui program E-Learning kami.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button 
                   onClick={() => document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white text-blue-700 px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg flex items-center gap-2 justify-center text-sm md:text-base"
+                  className="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-blue-50 shadow-md flex items-center gap-2 justify-center text-sm"
                 >
-                  <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
+                  <BookOpen className="w-4 h-4" />
                   Pilih Paket Belajar
                 </button>
                 <button 
                   onClick={() => document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="border-2 border-white text-white px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-white hover:text-blue-700 text-sm md:text-base"
+                  className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold transition-colors hover:bg-white hover:text-blue-700 text-sm"
                 >
                   Lihat Semua Kursus
                 </button>
