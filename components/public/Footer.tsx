@@ -150,7 +150,7 @@ export default function Footer({ role = 'student' }: FooterProps) {
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-blue-100">
                 <Mail className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">hello@ambilprestasi.ac.id</span>
+                <span className="text-sm">ambilprestasi1@gmail.com</span>
               </div>
               <div className="flex items-center gap-3 text-blue-100">
                 <Phone className="w-5 h-5 flex-shrink-0" />
@@ -159,8 +159,8 @@ export default function Footer({ role = 'student' }: FooterProps) {
               <div className="flex items-start gap-3 text-blue-100">
                 <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <span className="text-sm">
-                  Jl. Pendidikan No. 45<br />
-                  Sleman, Yogyakarta 55281<br />
+                  Tembalang, Kota Semarang<br />
+                  Jawa Tengah<br />
                   Indonesia
                 </span>
               </div>

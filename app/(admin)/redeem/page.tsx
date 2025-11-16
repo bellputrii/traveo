@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import LayoutNavbar from '@/components/public/LayoutNavbar'
 import Footer from '@/components/public/Footer'
-import { Plus, Edit, Trash2, ArrowLeft, Search, Copy, CheckCircle2, XCircle, X, CheckCircle, AlertTriangle, Ticket } from 'lucide-react'
+import { Plus, Edit, Trash2, ArrowLeft, Search, Copy, CheckCircle2, XCircle, X, CheckCircle, AlertTriangle, Ticket, Calendar } from 'lucide-react'
 
 interface RedeemCode {
   id: number;
@@ -26,6 +27,18 @@ interface ApiResponseRedeemCodes {
     itemsPerPage: number;
     totalPages: number;
     currentPage: number;
+  };
+}
+
+interface CreateRedeemCodeResponse {
+  success: boolean;
+  message: string;
+  data: {
+    code: string;
+    durationDays: number;
+    maxUses: number;
+    expiresAt: string | null;
+    message: string;
   };
 }
 
@@ -51,19 +64,28 @@ export default function RedeemCodePage() {
   const [messageSuccess, setMessageSuccess] = useState<string | null>(null)
   const [messageFailed, setMessageFailed] = useState<string | null>(null)
 
-  // Form state
+  // Form state - DIPERBARUI dengan expiresAt
   const [formData, setFormData] = useState({
     durationDays: 30,
-    maxUses: 1
+    maxUses: 1,
+    expiresAt: '' // Format: YYYY-MM-DDTHH:mm
   })
 
-  // Pindahkan fungsi isCodeActive ke sini (sebelum digunakan)
   const isCodeActive = (code: RedeemCode) => {
     const isExpired = code.expiresAt ? new Date(code.expiresAt) < new Date() : false
     return !isExpired && code.usedCount < code.maxUses
   }
 
-  // Auto calculation stats - GUNAKAN useMemo untuk mencegah perhitungan ulang yang tidak perlu
+  // Usage status helper (label + badge color)
+  const getRedeemStatus = (code: RedeemCode) => {
+    const expired = code.expiresAt ? new Date(code.expiresAt) < new Date() : false
+    if (expired) return { label: 'Kadaluarsa', badge: 'bg-gray-100 text-gray-800' }
+    if (code.usedCount === 0) return { label: 'Belum Terpakai', badge: 'bg-blue-100 text-blue-800' }
+    if (code.usedCount < code.maxUses) return { label: 'Sebagian digunakan', badge: 'bg-yellow-100 text-yellow-800' }
+    return { label: 'Terpakai', badge: 'bg-red-100 text-red-800' }
+  }
+
+  // Stats calculation
   const stats = [
     { 
       value: redeemCodes.length.toString(), 
@@ -100,7 +122,6 @@ export default function RedeemCodePage() {
   useEffect(() => {
     let result = redeemCodes;
     
-    // Apply search filter
     if (searchTerm.trim()) {
       const query = searchTerm.toLowerCase();
       result = result.filter(code => 
@@ -155,20 +176,36 @@ export default function RedeemCodePage() {
     }
   }
 
-  // Handle form input changes
+  // Handle form input changes - DIPERBARUI untuk menangani expiresAt
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: parseInt(value)
-    }))
+    const { name, value, type } = e.target
+    
+    if (type === 'datetime-local') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: parseInt(value) || 0
+      }))
+    }
+  }
+
+  // Format date for datetime-local input
+  const formatDateForInput = (dateString: string | null) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return date.toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:mm
   }
 
   // Reset form
   const resetForm = () => {
     setFormData({
       durationDays: 30,
-      maxUses: 1
+      maxUses: 1,
+      expiresAt: ''
     })
     setEditingRedeemCode(null)
   }
@@ -179,17 +216,18 @@ export default function RedeemCodePage() {
     setShowCreateModal(true)
   }
 
-  // Open edit modal
+  // Open edit modal - DIPERBARUI untuk mengatur expiresAt
   const handleEditCode = (code: RedeemCode) => {
     setEditingRedeemCode(code)
     setFormData({
       durationDays: code.durationDays,
-      maxUses: code.maxUses
+      maxUses: code.maxUses,
+      expiresAt: formatDateForInput(code.expiresAt)
     })
     setShowCreateModal(true)
   }
 
-  // Submit form (create or update)
+  // Submit form (create or update) - DIPERBARUI untuk mengirim expiresAt
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -210,6 +248,19 @@ export default function RedeemCodePage() {
         return
       }
 
+      // Prepare request body
+      const requestBody: any = {
+        durationDays: formData.durationDays,
+        maxUses: formData.maxUses,
+      }
+
+      // Only include expiresAt if it's provided
+      if (formData.expiresAt) {
+        // Convert to ISO string with milliseconds
+        const date = new Date(formData.expiresAt)
+        requestBody.expiresAt = date.toISOString()
+      }
+
       const url = editingRedeemCode 
         ? `${process.env.NEXT_PUBLIC_API_URL}/redeem/admin/${editingRedeemCode.id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/redeem/admin`
@@ -222,10 +273,7 @@ export default function RedeemCodePage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          durationDays: formData.durationDays,
-          maxUses: formData.maxUses,
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -496,77 +544,88 @@ export default function RedeemCodePage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCodes.map((redeemCode) => (
-                      <tr key={redeemCode.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-mono font-medium text-gray-900">
-                              {redeemCode.code}
+                    {filteredCodes.map((redeemCode) => {
+                      const status = getRedeemStatus(redeemCode)
+                      return (
+                        <tr key={redeemCode.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-mono font-medium text-gray-900">
+                                {redeemCode.code}
+                              </div>
+                              <button
+                                onClick={() => copyToClipboard(redeemCode.code)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                disabled={loading}
+                              >
+                                {copiedCode === redeemCode.code ? (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                ) : (
+                                  <Copy className="w-4 h-4" />
+                                )}
+                              </button>
                             </div>
-                            <button
-                              onClick={() => copyToClipboard(redeemCode.code)}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
-                              disabled={loading}
-                            >
-                              {copiedCode === redeemCode.code ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isCodeActive(redeemCode)
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {isCodeActive(redeemCode) ? 'Aktif' : 'Tidak Aktif'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{redeemCode.durationDays}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {redeemCode.usedCount} / {redeemCode.maxUses}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {redeemCode.expiresAt 
-                              ? new Date(redeemCode.expiresAt).toLocaleDateString('id-ID')
-                              : 'Tidak ada'
-                            }
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(redeemCode.createdAt).toLocaleDateString('id-ID')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditCode(redeemCode)}
-                              disabled={loading}
-                              className="bg-blue-500 text-white py-1 px-3 rounded text-xs font-medium transition-colors hover:bg-blue-600 flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Edit className="w-3 h-3" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => openDeleteConfirm(redeemCode.id, redeemCode.code)}
-                              disabled={loading}
-                              className="bg-gray-100 text-gray-700 py-1 px-3 rounded text-xs font-medium transition-colors hover:bg-red-500 hover:text-white flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.badge}`}>
+                              {status.label}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{redeemCode.durationDays}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {redeemCode.usedCount} / {redeemCode.maxUses}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {redeemCode.expiresAt 
+                                ? new Date(redeemCode.expiresAt).toLocaleDateString('id-ID', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : 'Tidak ada'
+                              }
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(redeemCode.createdAt).toLocaleDateString('id-ID', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditCode(redeemCode)}
+                                disabled={loading}
+                                className="bg-blue-500 text-white py-1 px-3 rounded text-xs font-medium transition-colors hover:bg-blue-600 flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Edit className="w-3 h-3" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => openDeleteConfirm(redeemCode.id, redeemCode.code)}
+                                disabled={loading}
+                                className="bg-gray-100 text-gray-700 py-1 px-3 rounded text-xs font-medium transition-colors hover:bg-red-500 hover:text-white flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
 
@@ -602,7 +661,7 @@ export default function RedeemCodePage() {
       </LayoutNavbar>
       <Footer/>
 
-      {/* Create/Edit Redeem Code Modal */}
+      {/* Create/Edit Redeem Code Modal - DIPERBARUI dengan field expiresAt */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 shadow-lg">
@@ -700,6 +759,27 @@ export default function RedeemCodePage() {
                     </div>
                   </div>
 
+                  {/* Expires At Field - BARU */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tanggal Kadaluarsa
+                    </label>
+                    <div className="relative">
+                      <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      <input
+                        type="datetime-local"
+                        name="expiresAt"
+                        value={formData.expiresAt}
+                        onChange={handleInputChange}
+                        disabled={loading}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 disabled:opacity-50 bg-white text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Kosongkan jika kode tidak memiliki tanggal kadaluarsa
+                    </p>
+                  </div>
+
                   {/* Additional Info */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-start gap-2">
@@ -709,7 +789,7 @@ export default function RedeemCodePage() {
                         <ul className="text-xs text-blue-700 mt-1 space-y-1">
                           <li>• Kode akan digenerate otomatis oleh sistem</li>
                           <li>• Setiap kode dapat digunakan untuk satu user</li>
-                          <li>• Kode berlaku sampai mencapai batas penggunaan maksimal</li>
+                          <li>• Kode berlaku sampai mencapai batas penggunaan atau tanggal kadaluarsa</li>
                         </ul>
                       </div>
                     </div>
