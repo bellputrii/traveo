@@ -842,6 +842,15 @@ export default function MaterialsPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {/* Tombol Kelola Quiz */}
+                          <button 
+                            onClick={() => router.push(`/classes/${classId}/sections/${sectionId}/materials/${material.id}/quizzes`)}
+                            disabled={loading}
+                            className="bg-purple-500 text-white p-2 rounded-lg transition-all duration-300 hover:bg-purple-600 hover:scale-105 active:scale-95 disabled:opacity-50"
+                            title="Kelola Quiz"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
                           <button 
                             onClick={() => handleEditMaterial(material)}
                             disabled={loading}
