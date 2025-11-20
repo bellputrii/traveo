@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -177,7 +178,7 @@ export default function QuestionsPage() {
     if (quizId) {
       fetchQuizData()
       fetchQuestions()
-    }
+    } 
   }, [quizId])
 
   // Reset question form

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, Home, BookOpen, Users, GraduationCap, ClipboardList, LogIn, UserPlus, User, LogOut, LayoutDashboard, Settings, Shield } from "lucide-react";
+import { Menu, X, Home, BookOpen, Users, GraduationCap, ClipboardList, LogIn, UserPlus, User, LogOut, LayoutDashboard, Settings, Shield, Star, Ticket } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -131,6 +131,9 @@ export default function NavBar() {
           if (savedUserData) {
             const parsedData = JSON.parse(savedUserData);
             setUserData(parsedData);
+          } else {
+            // Jika tidak ada data user yang disimpan, fetch dari API profile
+            await fetchUserProfile(token);
           }
         } else {
           // Fallback ke data yang disimpan di localStorage
@@ -154,6 +157,28 @@ export default function NavBar() {
       setUserData(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fungsi untuk fetch data user profile
+  const fetchUserProfile = async (token: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setUserData(result.data);
+          localStorage.setItem("userData", JSON.stringify(result.data));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
     }
   };
 
@@ -224,9 +249,11 @@ export default function NavBar() {
       case 'admin':
         // MENU ADMIN YANG BARU - sesuai permintaan
         return [
-          { name: "Dashboard", icon: <Home size={18} />, href: "/admin" },
+          { name: "Dashboard", icon: <Home size={18} />, href: "/dashboard" },
           { name: "Teacher", icon: <Users size={18} />, href: "/teacher" },
           { name: "Categories", icon: <Settings size={18} />, href: "/categories" },
+          { name: "Review", icon: <Star size={18} />, href: "/admin-review" },
+          { name: "Redeem", icon: <Ticket size={18} />, href: "/redeem" },
         ];
       
       default:
@@ -304,6 +331,11 @@ export default function NavBar() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Fungsi untuk handle klik profile (routing ke /profile)
+  const handleProfileClick = () => {
+    router.push('/profile');
   };
 
   const roleColors = getRoleColors();
@@ -393,31 +425,26 @@ export default function NavBar() {
               <div className="flex items-center gap-3">
                 {/* Profile Picture & Dropdown */}
                 <div className="relative group">
-                  <button className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${roleColors.bg} hover:${roleColors.hoverBg} ${roleColors.text}`}>
+                  <button 
+                    onClick={handleProfileClick}
+                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors cursor-pointer ${roleColors.bg} hover:${roleColors.hoverBg} ${roleColors.text}`}
+                  >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
                       userRole === 'teacher' ? "bg-blue-700" : 
                       userRole === 'admin' ? "bg-blue-700" : 
                       "bg-blue-600"
                     }`}>
-                      {userData?.profileImage ? (
-                        <Image
-                          src={userData.profileImage}
-                          alt={userData.name}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
-                        />
-                      ) : userData?.name ? (
+                      {userData?.name ? (
                         getInitials(userData.name)
                       ) : (
                         <User size={16} />
                       )}
                     </div>
                     <span className="text-sm font-medium hidden sm:inline">
-                      {userData?.name || (
-                        userRole === 'teacher' ? 'Teacher' :
-                        userRole === 'admin' ? 'Admin' :
-                        'Student'
+                      @{userData?.username || (
+                        userRole === 'teacher' ? 'teacher' :
+                        userRole === 'admin' ? 'admin' :
+                        'student'
                       )}
                     </span>
                   </button>
@@ -433,7 +460,7 @@ export default function NavBar() {
                         )}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {userData?.email || `${userRole}@example.com`}
+                        @{userData?.username || userRole}
                       </p>
                       <p className="text-xs text-gray-400 mt-1 capitalize">
                         Role: {userRole}
@@ -441,6 +468,20 @@ export default function NavBar() {
                     </div>
                     
                     <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={() => {
+                          handleProfileClick();
+                          // Tutup dropdown setelah klik
+                          const dropdown = document.querySelector('.group');
+                          if (dropdown) {
+                            dropdown.classList.remove('group-hover:opacity-100', 'group-hover:visible');
+                          }
+                        }}
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors w-full"
+                      >
+                        <User size={16} />
+                        <span>Profile Saya</span>
+                      </button>
                       <button
                         onClick={showLogoutConfirmation}
                         className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors w-full"
@@ -507,21 +548,19 @@ export default function NavBar() {
                 {isLoggedIn ? (
                   // Mobile menu ketika login
                   <>
-                    <div className="flex items-center gap-3 py-3 px-4 rounded-lg bg-gray-100 border border-gray-200">
+                    <div 
+                      onClick={() => {
+                        handleProfileClick();
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center gap-3 py-3 px-4 rounded-lg bg-gray-100 border border-gray-200 cursor-pointer hover:bg-gray-200 transition-all"
+                    >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
                         userRole === 'teacher' ? "bg-blue-700" : 
                         userRole === 'admin' ? "bg-blue-700" : 
                         "bg-blue-600"
                       }`}>
-                        {userData?.profileImage ? (
-                          <Image
-                            src={userData.profileImage}
-                            alt={userData.name}
-                            width={32}
-                            height={32}
-                            className="rounded-full object-cover"
-                          />
-                        ) : userData?.name ? (
+                        {userData?.name ? (
                           getInitials(userData.name)
                         ) : (
                           <User size={16} />
@@ -536,7 +575,7 @@ export default function NavBar() {
                           )}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {userData?.email || `${userRole}@example.com`}
+                          @{userData?.username || userRole}
                         </p>
                         <p className="text-xs text-gray-400 capitalize">
                           Role: {userRole}

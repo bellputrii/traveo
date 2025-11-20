@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -1271,7 +1272,7 @@ export default function MaterialsPage() {
                     {/* Sidebar - Info & Files */}
                     <div className="space-y-6">
                       {/* Basic Info */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      {/* <div className="bg-white rounded-lg border border-gray-200 p-6">
                         <h4 className="text-lg font-bold text-gray-900 mb-4">Informasi Materi</h4>
                         <div className="space-y-3">
                           <div>
@@ -1297,7 +1298,7 @@ export default function MaterialsPage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* File Attachments */}
                       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -1311,7 +1312,8 @@ export default function MaterialsPage() {
                               </div>
                               <a 
                                 href={detailMaterial.materialFilePath}
-                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-green-600 hover:text-green-800 transition-colors"
                                 title="Download File Materi"
                               >
@@ -1328,7 +1330,8 @@ export default function MaterialsPage() {
                               </div>
                               <a 
                                 href={detailMaterial.ringkasanPath}
-                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-purple-600 hover:text-purple-800 transition-colors"
                                 title="Download Ringkasan"
                               >
@@ -1345,7 +1348,8 @@ export default function MaterialsPage() {
                               </div>
                               <a 
                                 href={detailMaterial.templatePath}
-                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-orange-600 hover:text-orange-800 transition-colors"
                                 title="Download Template"
                               >

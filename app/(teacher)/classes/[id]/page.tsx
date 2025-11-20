@@ -116,7 +116,6 @@ export default function ClassDetailPage() {
     try {
       setLoading(true)
       
-      // Ambil token dari localStorage
       const token = localStorage.getItem("token")
       
       if (!token) {
@@ -135,7 +134,6 @@ export default function ClassDetailPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expired atau invalid
           localStorage.removeItem("token")
           setError('Sesi telah berakhir. Silakan login kembali.')
           setTimeout(() => router.push('/login'), 2000)
@@ -147,12 +145,7 @@ export default function ClassDetailPage() {
       const result: ApiResponse = await response.json()
       
       if (result.success) {
-        const classWithStats = {
-          ...result.data,
-          studentCount: result.data.students?.length || 0,
-          materialCount: Math.floor(Math.random() * 15) + 5 // Mock data
-        }
-        setClassData(classWithStats)
+        setClassData(result.data)
         setError(null)
       } else {
         throw new Error(result.message || 'Gagal memuat data kelas')
@@ -161,7 +154,6 @@ export default function ClassDetailPage() {
       console.error('Error fetching class data:', err)
       setError('Gagal memuat data kelas. Silakan coba lagi.')
       setMessageFailed('Gagal memuat data kelas')
-      // Fallback ke data statis jika API error
       setClassData(getFallbackClassData())
     } finally {
       setLoading(false)
@@ -175,8 +167,6 @@ export default function ClassDetailPage() {
     description: 'Ini adalah deskripsi kelas contoh',
     image_path: '/placeholder.png',
     categoryId: 1,
-    studentCount: 25,
-    materialCount: 8,
     createdAt: new Date().toISOString()
   })
 
@@ -442,11 +432,17 @@ export default function ClassDetailPage() {
     })
   }
 
+  // Auto-calculate stats from actual data
+  const totalMaterials = sections.reduce((acc, section) => acc + (section.Material?.length || 0), 0)
+  const totalQuizzes = sections.reduce((acc, section) => acc + (section.Quiz?.length || 0), 0)
+
   const stats = [
-    { value: classData?.studentCount?.toString() || '0', label: 'Siswa', icon: <Users className="w-5 h-5" /> },
+-    { value: classData?.studentCount?.toString() || '0', label: 'Siswa', icon: <Users className="w-5 h-5" /> },
     { value: sections.length.toString(), label: 'Section', icon: <List className="w-5 h-5" /> },
-    { value: classData?.materialCount?.toString() || '0', label: 'Total Materi', icon: <FileText className="w-5 h-5" /> },
-    { value: '4.8', label: 'Rating', icon: <Award className="w-5 h-5" /> },
+-    { value: classData?.materialCount?.toString() || '0', label: 'Total Materi', icon: <FileText className="w-5 h-5" /> },
+-    { value: '4.8', label: 'Rating', icon: <Award className="w-5 h-5" /> },
++    { value: totalMaterials.toString(), label: 'Total Materi', icon: <FileText className="w-5 h-5" /> },
++    { value: totalQuizzes.toString(), label: 'Total Quiz', icon: <Award className="w-5 h-5" /> },
   ]
 
   if (loading && !classData) {
@@ -587,7 +583,7 @@ export default function ClassDetailPage() {
                   </p>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     {stats.map((stat, index) => (
                       <div
                         key={index}
@@ -700,10 +696,7 @@ export default function ClassDetailPage() {
                           <File className="w-4 h-4" />
                           Kelola Materi
                         </button>
-                        <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-green-500 hover:text-white hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group">
-                          <BookOpen className="w-4 h-4" />
-                          Kelola Quiz
-                        </button>
+  
                       </div>
                     </div>
                   </div>

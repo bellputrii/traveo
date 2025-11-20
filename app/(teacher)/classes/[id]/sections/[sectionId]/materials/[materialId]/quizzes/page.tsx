@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -662,7 +663,7 @@ export default function QuizzesPage() {
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada quiz</h3>
                 <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                  Mulai dengan membuat quiz pertama untuk materi "{material.title}"
+                  Mulai dengan membuat quiz pertama untuk materi `{material.title}`
                 </p>
                 <button 
                   onClick={handleCreateQuiz}

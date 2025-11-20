@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import LayoutNavbar from '@/components/public/LayoutNavbar'
-import { BookOpen, Users, FileText, Plus, Play, Filter, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BookOpen, Users, FileText, Plus, Play, Filter, ArrowRight } from 'lucide-react' 
 import Footer from '@/components/public/Footer'
 
 interface Class {
@@ -65,7 +65,6 @@ const isValidImage = (path: string | null | undefined): boolean => {
 
 export default function TeacherDashboard() {
   const router = useRouter()
-  const [currentSlide, setCurrentSlide] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [classes, setClasses] = useState<Class[]>([])
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([])
@@ -202,60 +201,12 @@ export default function TeacherDashboard() {
     }
   }, [activeFilter, classes])
 
-  const heroSlides = [
-    {
-      title: "Kelola Kelas dengan Mudah",
-      subtitle: "Buat, edit, dan atur kelas pembelajaran Anda dalam satu platform",
-      icon: <BookOpen className="w-8 h-8 md:w-10 md:h-10" />,
-      bgColor: "bg-blue-600"
-    },
-    {
-      title: "Pantau Perkembangan Siswa",
-      subtitle: "Lihat statistik dan perkembangan belajar siswa secara real-time",
-      icon: <Users className="w-8 h-8 md:w-10 md:h-10" />,
-      bgColor: "bg-blue-600"
-    },
-    {
-      title: "Konten Pembelajaran Interaktif",
-      subtitle: "Buat materi yang menarik dan mudah dipahami oleh siswa",
-      icon: <FileText className="w-8 h-8 md:w-10 md:h-10" />,
-      bgColor: "bg-blue-600"
-    }
-  ]
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [heroSlides.length])
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
-  }
-
   const stats = [
     { 
       value: classes.length.toString(), 
       label: 'Total Kelas', 
       icon: <BookOpen className="w-6 h-6" />,
       color: 'bg-blue-500'
-    },
-    { 
-      value: classes.reduce((acc, c) => acc + (c.studentCount || 0), 0).toString(), 
-      label: 'Total Siswa', 
-      icon: <Users className="w-6 h-6" />,
-      color: 'bg-green-500'
-    },
-    { 
-      value: classes.reduce((acc, c) => acc + (c.materialCount || 0), 0).toString(), 
-      label: 'Total Materi', 
-      icon: <FileText className="w-6 h-6" />,
-      color: 'bg-purple-500'
     },
   ]
 
@@ -264,73 +215,15 @@ export default function TeacherDashboard() {
       <LayoutNavbar>
         <div className={`flex flex-col gap-8 md:gap-12 px-4 sm:px-6 lg:px-8 pt-16 md:pt-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           
-          {/* Hero Section dengan Carousel */}
+          {/* Header Section (Hero removed for consistency) */}
           <section className="w-full max-w-7xl mx-auto">
-            <div className="text-center mb-8 md:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <div className="text-center mb-4 md:mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
                 Dashboard Teacher
               </h1>
-              <p className="text-gray-700 max-w-2xl mx-auto text-lg sm:text-xl">
+              <p className="text-gray-700 max-w-2xl mx-auto mt-3 text-lg sm:text-xl">
                 Kelola semua kelas dan materi pembelajaran Anda dalam satu platform
               </p>
-            </div>
-
-            <div className="relative h-48 sm:h-56 md:h-64 w-full rounded-2xl overflow-hidden group">
-              {heroSlides.map((slide, index) => (
-                <div
-                  key={index}
-                  className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
-                    slide.bgColor
-                  } rounded-2xl flex items-center justify-center text-white p-8 ${
-                    index === currentSlide
-                      ? 'translate-x-0'
-                      : index < currentSlide
-                      ? '-translate-x-full'
-                      : 'translate-x-full'
-                  }`}
-                >
-                  <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 max-w-4xl w-full">
-                    <div className="bg-blue-700 p-4 rounded-2xl transition-all duration-300 group-hover:scale-110">
-                      {slide.icon}
-                    </div>
-                    <div className="text-center md:text-left">
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 transition-all duration-300 group-hover:scale-105">
-                        {slide.title}
-                      </h2>
-                      <p className="text-lg sm:text-xl opacity-90 transition-all duration-300 group-hover:scale-105">{slide.subtitle}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Carousel Controls */}
-              <button
-                onClick={prevSlide}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-blue-800 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 hover:bg-blue-900"
-              >
-                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-blue-800 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 hover:bg-blue-900"
-              >
-                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-
-              {/* Carousel Indicators */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                {heroSlides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 hover:scale-125 ${
-                      index === currentSlide
-                        ? 'bg-white w-6'
-                        : 'bg-blue-300'
-                    }`}
-                  />
-                ))}
-              </div>
             </div>
           </section>
 

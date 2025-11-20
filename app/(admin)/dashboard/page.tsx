@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import LayoutNavbar from '@/components/public/LayoutNavbar'
-import { Users, FolderOpen, Shield, BookOpen, UserCheck, ArrowRight, Ticket } from 'lucide-react'
+import { Users, FolderOpen, Shield, BookOpen, UserCheck, ArrowRight, Ticket, Star } from 'lucide-react'
 import Footer from '@/components/public/Footer'
 
 interface AdminStats {
@@ -14,6 +14,9 @@ interface AdminStats {
   totalRedeemCodes: number;
   activeRedeemCodes: number;
   totalRedeemed: number;
+  totalReviews: number;
+  pendingReviews: number;
+  approvedReviews: number;
 }
 
 interface Teacher {
@@ -43,6 +46,27 @@ interface RedeemCode {
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface Review {
+  id: number;
+  userId: string;
+  classId: number;
+  rating: number;
+  comment: string;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  User: {
+    id: string;
+    name: string;
+    username: string;
+    profileImage: string;
+  };
+  Class: {
+    id: number;
+    name: string;
+  };
 }
 
 interface ApiResponseTeachers {
@@ -75,6 +99,18 @@ interface ApiResponseRedeemCodes {
   };
 }
 
+interface ApiResponseReviews {
+  success: boolean;
+  message: string;
+  data: Review[];
+  meta: {
+    totalItems: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}
+
 export default function AdminDashboard() {
   const router = useRouter()
   const [isVisible, setIsVisible] = useState(false)
@@ -85,7 +121,10 @@ export default function AdminDashboard() {
     pendingTeachers: 0,
     totalRedeemCodes: 0,
     activeRedeemCodes: 0,
-    totalRedeemed: 0
+    totalRedeemed: 0,
+    totalReviews: 0,
+    pendingReviews: 0,
+    approvedReviews: 0
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -164,8 +203,28 @@ export default function AdminDashboard() {
 
       const redeemCodesData: ApiResponseRedeemCodes = await redeemCodesResponse.json()
 
+      // Fetch reviews data
+      const reviewsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/admin/all?search`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      })
+
+      if (!reviewsResponse.ok) {
+        if (reviewsResponse.status === 401) {
+          localStorage.removeItem("token")
+          setError('Sesi telah berakhir. Silakan login kembali.')
+          setTimeout(() => router.push('/auth/login'), 2000)
+          return
+        }
+        throw new Error(`HTTP error! status: ${reviewsResponse.status}`)
+      }
+
+      const reviewsData: ApiResponseReviews = await reviewsResponse.json()
+
       // Calculate stats from real data
-      if (teachersData.success && categoriesData.success && redeemCodesData.success) {
+      if (teachersData.success && categoriesData.success && redeemCodesData.success && reviewsData.success) {
         const totalTeachers = teachersData.data.length
         const pendingTeachers = teachersData.data.filter(teacher => teacher.status === 'INACTIVE').length
         const totalCategories = categoriesData.data.length
@@ -175,6 +234,10 @@ export default function AdminDashboard() {
           code.usedCount < code.maxUses && 
           (!code.expiresAt || new Date(code.expiresAt) > new Date())
         ).length
+        
+        const totalReviews = reviewsData.data.length
+        const pendingReviews = reviewsData.data.filter(review => !review.isApproved).length
+        const approvedReviews = totalReviews - pendingReviews
 
         setStats({
           totalTeachers,
@@ -183,7 +246,10 @@ export default function AdminDashboard() {
           pendingTeachers,
           totalRedeemCodes,
           totalRedeemed,
-          activeRedeemCodes
+          activeRedeemCodes,
+          totalReviews,
+          pendingReviews,
+          approvedReviews
         })
       } else {
         throw new Error('Gagal memuat data statistik')
@@ -201,7 +267,10 @@ export default function AdminDashboard() {
         pendingTeachers: 3,
         totalRedeemCodes: 12,
         activeRedeemCodes: 8,
-        totalRedeemed: 45
+        totalRedeemed: 45,
+        totalReviews: 23,
+        pendingReviews: 5,
+        approvedReviews: 18
       })
     } finally {
       setLoading(false)
@@ -260,6 +329,23 @@ export default function AdminDashboard() {
         { label: "Aktif", value: stats.activeRedeemCodes.toString() },
         { label: "Total Ditukar", value: stats.totalRedeemed.toString() }
       ]
+    },
+    {
+      id: 4,
+      title: "Kelola Review",
+      description: "Kelola review kelas, approve dan hapus review yang tidak sesuai",
+      icon: <Star className="w-8 h-8" />,
+      color: "bg-amber-600",
+      iconColor: "text-amber-600",
+      bgColor: "bg-amber-100",
+      borderColor: "border-amber-200",
+      buttonColor: "bg-amber-600 hover:bg-amber-700",
+      href: "/admin-review",
+      stats: [
+        { label: "Total Review", value: stats.totalReviews.toString() },
+        { label: "Pending", value: stats.pendingReviews.toString() },
+        { label: "Approved", value: stats.approvedReviews.toString() }
+      ]
     }
   ]
 
@@ -287,11 +373,11 @@ export default function AdminDashboard() {
       textColor: 'text-orange-700'
     },
     { 
-      value: stats.totalRedeemCodes.toString(), 
-      label: 'Kode Redeem', 
-      icon: <Ticket className="w-6 h-6" />,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-700'
+      value: stats.pendingReviews.toString(), 
+      label: 'Review Pending', 
+      icon: <Star className="w-6 h-6" />,
+      color: 'bg-amber-500',
+      textColor: 'text-amber-700'
     },
   ]
 
@@ -317,7 +403,7 @@ export default function AdminDashboard() {
                 </h1>
               </div>
               <p className="text-gray-700 max-w-2xl mx-auto text-base">
-                Kelola teacher, kategori kelas, dan redeem code platform Ambil Prestasi
+                Kelola teacher, kategori kelas, redeem code, dan review platform Ambil Prestasi
               </p>
             </div>
 
@@ -377,7 +463,7 @@ export default function AdminDashboard() {
                   Management Panel
                 </h2>
                 <p className="text-gray-700 text-sm">
-                  Kelola teacher, kategori kelas, dan redeem code platform
+                  Kelola teacher, kategori kelas, redeem code, dan review platform
                 </p>
               </div>
 

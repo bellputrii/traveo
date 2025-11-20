@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import LayoutNavbar from '@/components/public/LayoutNavbar'
-import { Plus, Edit, Trash2, BookOpen, Users, FileText, X, Upload, Image as ImageIcon, CheckCircle, XCircle, AlertTriangle, Filter, Search } from 'lucide-react'
+import { Plus, Edit, Trash2, BookOpen, Users, FileText, X, Upload, Image as ImageIcon, CheckCircle, XCircle, AlertTriangle, Filter, Search, ChevronDown, ChevronUp } from 'lucide-react'
 import Footer from '@/components/public/Footer'
 
 interface Class {
@@ -72,6 +72,7 @@ export default function TeacherHome() {
   const router = useRouter()
   const [classes, setClasses] = useState<Class[]>([])
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([])
+  const [displayedClasses, setDisplayedClasses] = useState<Class[]>([])
   const [categories] = useState<Category[]>([
     { id: 1, name: 'Essay' },
     { id: 2, name: 'Bussiness Plan' },
@@ -91,6 +92,9 @@ export default function TeacherHome() {
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showMore, setShowMore] = useState(false)
+  const initialDisplayCount = 6
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // State untuk message feedback
   const [messageSuccess, setMessageSuccess] = useState<string | null>(null)
@@ -144,12 +148,20 @@ export default function TeacherHome() {
     setFilteredClasses(result);
   }, [activeFilter, searchQuery, classes])
 
-  // Fetch classes from API dengan struktur yang sama seperti di e-learning
+  // Update displayed classes when filtered classes or showMore changes
+  useEffect(() => {
+    if (showMore) {
+      setDisplayedClasses(filteredClasses);
+    } else {
+      setDisplayedClasses(filteredClasses.slice(0, initialDisplayCount));
+    }
+  }, [filteredClasses, showMore])
+
+  // Fetch classes from API
   const fetchClasses = async () => {
     try {
       setLoading(true)
       
-      // Ambil token dari localStorage
       const token = localStorage.getItem("token")
       
       if (!token) {
@@ -168,7 +180,6 @@ export default function TeacherHome() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expired atau invalid
           localStorage.removeItem("token")
           setError('Sesi telah berakhir. Silakan login kembali.')
           setTimeout(() => router.push('/auth/login'), 2000)
@@ -180,7 +191,6 @@ export default function TeacherHome() {
       const result: ApiResponse = await response.json()
       
       if (result.success && result.data.classes) {
-        // Transform data dari API ke format yang diharapkan komponen
         const transformedClasses = result.data.classes.map((classItem) => ({
           id: classItem.id,
           name: classItem.name,
@@ -188,8 +198,6 @@ export default function TeacherHome() {
           image_path: classItem.image_path,
           image_path_relative: classItem.image_path_relative,
           categoryId: classItem.categoryId,
-          studentCount: Math.floor(Math.random() * 30) + 10,
-          materialCount: Math.floor(Math.random() * 15) + 5,
           createdAt: new Date().toISOString()
         }))
 
@@ -202,7 +210,6 @@ export default function TeacherHome() {
       console.error('Error fetching classes:', err)
       setError('Gagal memuat data kelas. Silakan coba lagi.')
       setMessageFailed('Gagal memuat data kelas')
-      // Fallback ke data statis jika API error
       setClasses(getFallbackClasses())
     } finally {
       setLoading(false)
@@ -217,8 +224,6 @@ export default function TeacherHome() {
       description: 'Pelajari teknik menulis esai akademik yang efektif untuk kompetisi',
       image_path: '/essay.png',
       categoryId: 1,
-      studentCount: 25,
-      materialCount: 8,
       createdAt: new Date().toISOString()
     },
     {
@@ -227,8 +232,6 @@ export default function TeacherHome() {
       description: 'Buat business plan yang menarik untuk kompetisi startup',
       image_path: '/business-plan.png',
       categoryId: 2,
-      studentCount: 18,
-      materialCount: 12,
       createdAt: new Date().toISOString()
     },
     {
@@ -237,8 +240,46 @@ export default function TeacherHome() {
       description: 'Teknik menulis karya ilmiah dan strategi publikasi',
       image_path: '/karya-tulis-ilmiah.png',
       categoryId: 3,
-      studentCount: 32,
-      materialCount: 10,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 4,
+      name: 'Desain Grafis untuk Pemula',
+      description: 'Pelajari dasar-dasar desain grafis untuk pemula',
+      image_path: '/desain-grafis.png',
+      categoryId: 4,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 5,
+      name: 'Advanced Essay Writing',
+      description: 'Teknik lanjutan menulis esai untuk kompetisi tingkat tinggi',
+      image_path: '/advanced-essay.png',
+      categoryId: 1,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 6,
+      name: 'Startup Funding Strategy',
+      description: 'Strategi mendapatkan funding untuk startup Anda',
+      image_path: '/startup-funding.png',
+      categoryId: 2,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 7,
+      name: 'Metodologi Penelitian Kuantitatif',
+      description: 'Panduan lengkap metodologi penelitian kuantitatif',
+      image_path: '/metodologi-penelitian.png',
+      categoryId: 3,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 8,
+      name: 'UI/UX Design Fundamentals',
+      description: 'Dasar-dasar desain UI/UX untuk aplikasi modern',
+      image_path: '/ui-ux-design.png',
+      categoryId: 4,
       createdAt: new Date().toISOString()
     }
   ]
@@ -275,9 +316,15 @@ export default function TeacherHome() {
         image: file
       }))
       
+      // Create URL untuk preview
       const reader = new FileReader()
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
+        if (e.target?.result) {
+          setImagePreview(e.target.result as string)
+        }
+      }
+      reader.onerror = () => {
+        setMessageFailed('Gagal memuat gambar')
       }
       reader.readAsDataURL(file)
     }
@@ -293,6 +340,9 @@ export default function TeacherHome() {
     })
     setImagePreview(null)
     setEditingClass(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   // Open create modal
@@ -446,12 +496,31 @@ export default function TeacherHome() {
     })
   }
 
-  // Stats untuk header
+  // Stats untuk header - hanya total section
   const stats = [
-    { value: classes.length.toString(), label: 'Total Kelas', icon: <BookOpen className="w-5 h-5" /> },
-    { value: classes.reduce((acc, c) => acc + (c.studentCount || 0), 0).toString(), label: 'Total Siswa', icon: <Users className="w-5 h-5" /> },
-    { value: classes.reduce((acc, c) => acc + (c.materialCount || 0), 0).toString(), label: 'Total Materi', icon: <FileText className="w-5 h-5" /> },
+    { value: classes.length.toString(), label: 'Total Kelas', icon: <BookOpen className="w-5 h-5" /> }
   ]
+
+  // Toggle show more
+  const toggleShowMore = () => {
+    setShowMore(!showMore)
+  }
+
+  // Handle click on image upload area
+  const handleImageAreaClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  // Handle remove image
+  const handleRemoveImage = () => {
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, image: null }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <>
@@ -530,8 +599,8 @@ export default function TeacherHome() {
                 </div>
               )}
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              {/* Stats Cards - Hanya Total Section */}
+              <div className="grid grid-cols-1 gap-4 mt-6 max-w-xs">
                 {stats.map((stat, index) => (
                   <div
                     key={index}
@@ -625,91 +694,105 @@ export default function TeacherHome() {
                 <p className="text-gray-600 mt-4">Memuat data kelas...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClasses.map((classItem) => (
-                  <div 
-                    key={classItem.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-blue-300 group"
-                  >
-                    <div className="relative h-48 w-full overflow-hidden">
-                      {isValidImage(classItem.image_path_relative || classItem.image_path) ? (
-                        <Image
-                          src={getValidImageUrl(classItem.image_path_relative || classItem.image_path)}
-                          alt={classItem.name}
-                          fill
-                          className="object-cover transition-all duration-500 group-hover:scale-105"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                          <BookOpen className="w-12 h-12 text-white opacity-90" />
-                        </div>
-                      )}
-                      
-                      {/* Category Badge */}
-                      <div className="absolute top-3 right-3">
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          {mapCategory(classItem.categoryId)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5">
-                      <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-700 transition-colors">
-                        {classItem.name}
-                      </h3>
-                      
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {classItem.description}
-                      </p>
-                      
-                      {/* Class Stats */}
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium">{classItem.studentCount || 0}</span>
-                            <span className="text-gray-500">Siswa</span>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {displayedClasses.map((classItem) => (
+                    <div 
+                      key={classItem.id}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-blue-300 group"
+                    >
+                      <div className="relative h-48 w-full overflow-hidden">
+                        {isValidImage(classItem.image_path_relative || classItem.image_path) ? (
+                          <Image
+                            src={getValidImageUrl(classItem.image_path_relative || classItem.image_path)}
+                            alt={classItem.name}
+                            fill
+                            className="object-cover transition-all duration-500 group-hover:scale-105"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <BookOpen className="w-12 h-12 text-white opacity-90" />
                           </div>
-                          <div className="flex items-center gap-1">
-                            <FileText className="w-4 h-4 text-green-500" />
-                            <span className="font-medium">{classItem.materialCount || 0}</span>
-                            <span className="text-gray-500">Materi</span>
-                          </div>
+                        )}
+                        
+                        {/* Category Badge */}
+                        <div className="absolute top-3 right-3">
+                          <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                            {mapCategory(classItem.categoryId)}
+                          </span>
                         </div>
                       </div>
+                      
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-700 transition-colors">
+                          {classItem.name}
+                        </h3>
+                        
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                          {classItem.description}
+                        </p>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-4 border-t border-gray-100">
-                        <button 
-                          onClick={() => router.push(`/classes/${classItem.id}`)}
-                          className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-blue-600 active:scale-95 flex items-center justify-center gap-2"
-                        >
+                        {/* Stats - Only Section Count */}
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100">
                           <BookOpen className="w-4 h-4" />
-                          Kelola
-                        </button>
-                        <button 
-                          onClick={() => handleEditClass(classItem)}
-                          disabled={loading}
-                          className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => openDeleteConfirm(classItem.id, classItem.name)}
-                          disabled={loading}
-                          className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-red-500 hover:text-white active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <span>Belum ada section</span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => router.push(`/classes/${classItem.id}`)}
+                            className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-blue-600 active:scale-95 flex items-center justify-center gap-2"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                            Kelola
+                          </button>
+                          <button 
+                            onClick={() => handleEditClass(classItem)}
+                            disabled={loading}
+                            className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => openDeleteConfirm(classItem.id, classItem.name)}
+                            disabled={loading}
+                            className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-red-500 hover:text-white active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Show More Button */}
+                {filteredClasses.length > initialDisplayCount && (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      onClick={toggleShowMore}
+                      className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
+                    >
+                      {showMore ? (
+                        <>
+                          <ChevronUp className="w-5 h-5" />
+                          Tampilkan Lebih Sedikit
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-5 h-5" />
+                          Tampilkan Lebih Banyak ({filteredClasses.length - initialDisplayCount} lainnya)
+                        </>
+                      )}
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
             {/* Empty State */}
@@ -742,7 +825,7 @@ export default function TeacherHome() {
       </LayoutNavbar>
       <Footer/>
 
-      {/* Create/Edit Class Modal */}
+      {/* Create/Edit Class Modal - DENGAN PENDEKATAN SEPERTI LARAVEL */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 shadow-2xl">
@@ -765,42 +848,52 @@ export default function TeacherHome() {
             <div className="flex-1 overflow-y-auto">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="space-y-6">
-                  {/* Image Upload */}
+                  {/* Image Upload Section - SEPERTI DI LARAVEL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Gambar Kelas
                     </label>
-                    <div className="flex items-center justify-center">
-                      <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
-                        {imagePreview ? (
-                          <div className="relative w-full h-full">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="rounded-lg object-cover w-full h-full"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
-                              <Upload className="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                            <p className="text-xs text-gray-500 text-center px-2">Upload Gambar</p>
-                          </div>
-                        )}
+                    
+                    {/* Upload Area - Selalu Tampil */}
+                    <div className="flex items-center justify-center mb-4">
+                      <div 
+                        onClick={handleImageAreaClick}
+                        className="flex flex-col items-center justify-center w-full max-w-md border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50 p-8"
+                      >
+                        <ImageIcon className="w-12 h-12 text-gray-400 mb-3" />
+                        <p className="text-sm text-gray-500 text-center mb-1">Klik untuk upload gambar</p>
+                        <p className="text-xs text-gray-400 text-center">Format: JPG, PNG, GIF - Maksimal 2MB</p>
                         <input 
+                          ref={fileInputRef}
                           type="file" 
                           className="hidden" 
                           accept="image/*"
                           onChange={handleImageChange}
                           disabled={loading}
                         />
-                      </label>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Format: JPG, PNG, GIF. Maksimal 2MB
-                    </p>
+
+                    {/* Preview Area - Hanya Tampil Jika Ada Gambar */}
+                    {imagePreview && (
+                      <div className="text-center mt-4">
+                        <div className="inline-block relative">
+                          <img 
+                            src={imagePreview} 
+                            alt="Preview Gambar Kelas" 
+                            className="w-48 h-48 object-cover rounded-lg border border-gray-300 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="text-gray-500 text-sm mt-2">Preview Gambar Kelas</div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Name Input */}
