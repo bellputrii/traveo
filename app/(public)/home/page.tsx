@@ -1,467 +1,518 @@
-'use client'
+// app/(public)/home/page.tsx
+'use client';
 
-import { useState } from 'react'
-import Image from 'next/image'
-import LayoutNavbar from '@/components/public/LayoutNavbar'
-import { CheckCircle, Play, Users, Clock, BookOpen, Star, ArrowRight, Video, FileText, Award, ChevronDown } from 'lucide-react'
-import Footer from '@/components/public/Footer'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import Sidebar from '@/components/dashboard/Sidebar';
+import { Navbar } from '@/components/public/Navbar';
+import { ArrowUpRight, Activity, AlertTriangle, Database, Server, RefreshCw } from 'lucide-react';
+
+// Type definitions
+interface DashboardStats {
+  totalDetections: number;
+  averageAccuracy: number;
+  topDisease: {
+    name: string;
+    total: number;
+  };
+}
+
+interface DiseaseDistribution {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface RecentActivity {
+  id: string;
+  diseaseName: string;
+  status: string;
+  imageUrl: string;
+  time: string;
+}
 
 export default function HomePage() {
-  const router = useRouter()
+  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [loading, setLoading] = useState({
+    stats: true,
+    chart: true,
+    recent: true
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [distribution, setDistribution] = useState<DiseaseDistribution[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Data untuk paket berlangganan - HARGA BARU
-  const plans = [
-    {
-      name: "Paket 1 Bulan",
-      originalPrice: "Rp 50.000",
-      price: "Rp 15.000",
-      discount: "70%",
-      duration: "1 Bulan",
-      features: [
-        "Akses ke SEMUA kursus dan materi",
-        "Download modul PDF eksklusif",
-        "Grup diskusi komunitas",
-        "Update kursus berkala",
-        "Forum tanya jawab",
-        "Berkesempatan menjadi Brand Ambassador"
-      ],
-      buttonText: "Pilih Paket 1 Bulan",
-      popular: false,
-      link: "https://lynk.id/ambilprestasi"
-    },
-    {
-      name: "Paket 4 Bulan",
-      originalPrice: "Rp 166.000",
-      price: "Rp 50.000",
-      discount: "70%",
-      duration: "4 Bulan",
-      features: [
-        "Akses ke SEMUA kursus dan materi",
-        "Download modul PDF eksklusif",
-        "Grup diskusi komunitas",
-        "Update kursus berkala",
-        "Forum tanya jawab",
-        "Priority support",
-        "Video rekaman materi",
-        "Berkesempatan menjadi Brand Ambassador"
-      ],
-      buttonText: "Pilih Paket 4 Bulan",
-      popular: true,
-      link: "https://lynk.id/ambilprestasi"
-    },
-    {
-      name: "Paket 1 Tahun",
-      originalPrice: "Rp 333.000",
-      price: "Rp 100.000",
-      discount: "70%",
-      duration: "1 Tahun",
-      features: [
-        "Akses ke SEMUA kursus dan materi",
-        "Download modul PDF eksklusif",
-        "Grup diskusi komunitas",
-        "Update kursus berkala",
-        "Forum tanya jawab",
-        "Priority support",
-        "Video rekaman materi",
-        "Personal learning path",
-        "Assessment perkembangan belajar",
-        "Berkesempatan menjadi Brand Ambassador"
-      ],
-      buttonText: "Pilih Paket 1 Tahun",
-      popular: false,
-      link: "https://lynk.id/ambilprestasi"
+  // // API Base URL
+  // const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://padicheckai-backend-production.up.railway.app";
+
+  // Set mounted to true after component mounts (client-side only)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Function to get token
+  const getToken = (): string | null => {
+    if (!mounted) return null; // Prevent accessing localStorage during SSR
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
+  // Function to format time ago
+  const getTimeAgo = (dateString: string): string => {
+    if (!dateString) return 'Waktu tidak tersedia';
+    
+    try {
+      const now = new Date();
+      const past = new Date(dateString);
+      const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) return 'Baru saja';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
+      if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
+      return `${Math.floor(diffInSeconds / 2592000)} bulan yang lalu`;
+    } catch (error) {
+      return 'Waktu tidak valid';
     }
-  ]
+  };
 
-  // Data testimonials
-  const testimonials = [
-    {
-      text: "Dengan paket berlangganan, saya bisa akses semua kursus dan materi pembelajaran. Sangat membantu persiapan lomba!",
-      name: "Nina, Mahasiswa Psikologi",
-      role: "Peserta Program 4 Bulan",
-      rating: 5
-    },
-    {
-      text: "Materi kursusnya lengkap dan selalu update. Pembelajaran jadi lebih terstruktur dan mudah dipahami.",
-      name: "Dimas, Fresh Graduate",
-      role: "Peserta Program 1 Tahun",
-      rating: 5
-    },
-    {
-      text: "Harga sangat terjangkau untuk akses seluas ini. Saya bisa belajar semua topik yang saya butuhkan untuk kompetisi.",
-      name: "Rani, Pegawai Swasta",
-      role: "Peserta Program 1 Bulan",
-      rating: 5
+  // Function to get color for disease based on name
+  const getDiseaseColor = (diseaseName: string): string => {
+    if (!diseaseName) return 'bg-gray-500';
+    
+    const colorMap: Record<string, string> = {
+      'Tungro': 'bg-orange-500',
+      'Blast Daun (Leaf Blast)': 'bg-red-500',
+      'Bercak Coklat (Brown Spot)': 'bg-yellow-500',
+      'Hawar Daun Bakteri (BLB/Kresek)': 'bg-blue-400',
+      'Hawar Pelepah (Leaf Scald)': 'bg-purple-500',
+      'Narrow Brown Spot': 'bg-indigo-500',
+      'Blast': 'bg-red-500',
+      'Brown Spot': 'bg-yellow-500',
+      'Bacterial Blight': 'bg-blue-400',
+    };
+    
+    return colorMap[diseaseName] || 'bg-gray-500';
+  };
+
+  // Function to fetch dashboard stats
+  const fetchStats = async () => {
+    const token = getToken();
+    if (!token) {
+      setError('Anda belum login. Silakan login terlebih dahulu.');
+      setLoading(prev => ({ ...prev, stats: false }));
+      return;
     }
-  ]
 
-  // Fungsi untuk handle pemilihan paket
-  const handlePackageSelect = (link: string) => {
-    window.open(link, '_blank', 'noopener,noreferrer')
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/stats`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setStats(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError('Gagal mengambil data statistik. Menggunakan data dummy.');
+      // Fallback to dummy data
+      setStats({
+        totalDetections: 1,
+        averageAccuracy: 77.1,
+        topDisease: { name: "Blast Daun (Leaf Blast)", total: 1 }
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, stats: false }));
+    }
+  };
+
+  // Function to fetch disease distribution
+  const fetchDistribution = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(prev => ({ ...prev, chart: false }));
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/chart`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Filter out diseases with 0% for better display
+      const filteredData = data.filter((item: DiseaseDistribution) => item.percentage > 0);
+      setDistribution(filteredData);
+    } catch (err) {
+      console.error('Error fetching distribution:', err);
+      // Fallback to dummy data
+      setDistribution([
+        { name: "Blast Daun (Leaf Blast)", count: 1, percentage: 50 },
+        { name: "Hawar Daun Bakteri (BLB/Kresek)", count: 1, percentage: 50 }
+      ]);
+    } finally {
+      setLoading(prev => ({ ...prev, chart: false }));
+    }
+  };
+
+  // Function to fetch recent activities
+  const fetchRecentActivities = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(prev => ({ ...prev, recent: false }));
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/recent`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRecentActivities(data);
+    } catch (err) {
+      console.error('Error fetching recent activities:', err);
+      // Fallback to dummy data with timestamps
+      setRecentActivities([
+        {
+          id: "DET-2025-002",
+          diseaseName: "Hawar Daun Bakteri (BLB/Kresek)",
+          status: "Terdeteksi Penyakit",
+          imageUrl: "",
+          time: new Date(Date.now() - 15 * 60 * 1000).toISOString() // 15 minutes ago
+        },
+        {
+          id: "DET-2025-001",
+          diseaseName: "Blast Daun (Leaf Blast)",
+          status: "Terdeteksi Penyakit",
+          imageUrl: "",
+          time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+        }
+      ]);
+    } finally {
+      setLoading(prev => ({ ...prev, recent: false }));
+    }
+  };
+
+  // Function to refresh all data
+  const refreshAllData = async () => {
+    setRefreshing(true);
+    setError(null);
+    
+    // Reset loading states
+    setLoading({ stats: true, chart: true, recent: true });
+    
+    // Fetch all data in parallel
+    await Promise.all([
+      fetchStats(),
+      fetchDistribution(),
+      fetchRecentActivities()
+    ]);
+    
+    setRefreshing(false);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    if (!mounted) return; // Wait until component is mounted
+    
+    const token = getToken();
+    if (!token) {
+      // If no token, set all loading to false and show error
+      setLoading({ stats: false, chart: false, recent: false });
+      setError('Silakan login untuk melihat dashboard.');
+      return;
+    }
+
+    fetchStats();
+    fetchDistribution();
+    fetchRecentActivities();
+  }, [mounted]);
+
+  // Check if all data is still loading
+  const isLoading = loading.stats || loading.chart || loading.recent;
+
+  // Don't render anything until component is mounted (prevent hydration mismatch)
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <div className="w-64"></div>
+        <div className="ml-64 flex-1">
+          <main className="p-6">
+            <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-5 border shadow-sm">
+                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
-  const stats = [
-    { value: '180+', label: 'Video Pembelajaran', icon: <Video className="w-4 h-4 sm:w-5 sm:h-5" /> },
-    { value: '90+', label: 'Modul Belajar', icon: <FileText className="w-4 h-4 sm:w-6 sm:h-6" /> },
-    { value: '2500+', label: 'Peserta Aktif', icon: <Users className="w-4 h-4 sm:w-6 sm:h-6" /> },
-    { value: '300+', label: 'Pemenang Kompetisi', icon: <Award className="w-4 h-4 sm:w-6 sm:h-6" /> },
-  ]
-
-  const features = [
-    {
-      icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />,
-      title: "Akses Semua Materi",
-      description: "Dapatkan akses ke seluruh modul pembelajaran selama periode berlangganan"
-    },
-    {
-      icon: <Video className="w-5 h-5 sm:w-6 sm:h-6" />,
-      title: "Belajar Fleksibel",
-      description: "Belajar kapan saja dan di mana saja sesuai dengan waktu luang Anda"
-    },
-    {
-      icon: <Award className="w-5 h-5 sm:w-6 sm:h-6" />,
-      title: "Brand Ambassador",
-      description: "Kesempatan menjadi brand ambassador dengan benefit eksklusif"
-    },
-    {
-      icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" />,
-      title: "Komunitas Eksklusif",
-      description: "Bergabung dengan komunitas belajar yang supportive dan inspiratif"
-    }
-  ]
-
-  const learningPath = [
-    {
-      step: '1',
-      title: 'Belajar Interaktif',
-      desc: 'Pelajari konten-konten berkualitas dan tonton video dari mentor berpengalaman.',
-      icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
-    },
-    {
-      step: '2',
-      title: 'Praktik Langsung',
-      desc: 'Implementasikan materi dengan latihan dan studi kasus nyata.',
-      icon: <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-    },
-    {
-      step: '3',
-      title: 'Raih Prestasi',
-      desc: 'Siap berkompetisi dan raih prestasi terbaik dengan bekal yang matang!',
-      icon: <Award className="w-5 h-5 sm:w-6 sm:h-6" />
-    }
-  ]
-
   return (
-    <>
-      <LayoutNavbar>
-        <div className="flex flex-col gap-8 md:gap-16 px-3 sm:px-6 pt-12 md:pt-20">
-          {/* Hero Section */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-4 md:gap-6 bg-blue-800 rounded-xl p-4 md:p-6 text-white">
-              <div className="space-y-3 md:space-y-4 order-2 lg:order-1">
-                <div className="flex items-center gap-2 bg-blue-700 rounded-full px-3 py-1 w-fit">
-                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="text-xs sm:text-sm font-medium">Platform Belajar Premium</span>
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      
+      <div className="ml-64 flex-1">
+        <Navbar />
+        
+        <main className="p-6 space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  <span>{error}</span>
                 </div>
-                
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">
-                  Raih Prestasi Terbaik dengan Pembelajaran Berkualitas
-                </h1>
-                
-                <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-                  Akses semua materi pembelajaran premium dengan paket berlangganan.  
-                  Belajar dari mentor ahli dan wujudkan impian kompetisimu!
-                </p>
+                <button 
+                  onClick={refreshAllData}
+                  className="text-red-700 hover:text-red-900 text-sm font-medium"
+                >
+                  Coba lagi
+                </button>
+              </div>
+            </div>
+          )}
 
-                <div className="space-y-2">
-                  {[
-                    "Akses ke SEMUA materi pembelajaran selama berlangganan",
-                    "Konsultasi langsung dengan mentor berpengalaman",
-                    "Kesempatan menjadi Brand Ambassador"
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <CheckCircle className="text-green-300 flex-shrink-0" size={16} />
-                      <span className="text-blue-100 text-xs sm:text-sm">{item}</span>
+          {/* Header with Refresh Button */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <button
+              onClick={refreshAllData}
+              disabled={refreshing || isLoading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                refreshing || isLoading
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+              }`}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Menyegarkan...' : 'Refresh Data'}
+            </button>
+          </div>
+
+          {/* ====== STAT CARDS ====== */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Total Deteksi */}
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Total Deteksi</p>
+                  <div className="text-2xl font-semibold mt-1">
+                    {loading.stats ? (
+                      <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    ) : (
+                      stats?.totalDetections.toLocaleString() || '0'
+                    )}
+                  </div>
+                </div>
+                <Activity className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="text-xs text-emerald-500 mt-2">
+                {stats?.totalDetections && stats.totalDetections > 0 ? 'Data real-time' : 'Belum ada deteksi'}
+              </div>
+            </div>
+
+            {/* Akurasi Model */}
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Akurasi Model</p>
+                  <div className="text-2xl font-semibold mt-1">
+                    {loading.stats ? (
+                      <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    ) : (
+                      stats?.averageAccuracy ? `${stats.averageAccuracy.toFixed(2)}%` : '0%'
+                    )}
+                  </div>
+                </div>
+                <Database className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="text-xs text-emerald-500 mt-2">
+                {stats?.averageAccuracy && stats.averageAccuracy > 0 ? 'Rata-rata dari semua deteksi' : 'Belum ada data'}
+              </div>
+            </div>
+
+            {/* Penyakit Terbanyak */}
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Penyakit Terbanyak</p>
+                  <div className="text-xl font-semibold mt-1">
+                    {loading.stats ? (
+                      <div className="h-7 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    ) : (
+                      stats?.topDisease?.name || 'Tidak ada data'
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {loading.stats ? (
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mt-1"></div>
+                    ) : (
+                      stats?.topDisease?.total ? `${stats.topDisease.total} kasus` : '0 kasus'
+                    )}
+                  </div>
+                </div>
+                <AlertTriangle className="w-6 h-6 text-orange-500" />
+              </div>
+            </div>
+
+            {/* Status Server */}
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Status Server</p>
+                  <div className="text-xl font-semibold mt-1">Online</div>
+                  <div className="text-xs text-emerald-500">99.9% uptime</div>
+                </div>
+                <Server className="w-6 h-6 text-purple-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* ====== PROMO / START DETECTION BANNER ====== */}
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-8 rounded-xl text-white shadow">
+            <h2 className="text-xl font-semibold mb-2">Mulai Deteksi Baru</h2>
+            <div className="text-sm text-emerald-50 max-w-xl">
+              Upload foto daun padi Anda untuk mendeteksi penyakit secara otomatis menggunakan AI.
+              Dapatkan hasil analisis dalam hitungan detik dengan akurasi tinggi.
+            </div>
+
+            <button className="mt-5 px-5 py-2 bg-white text-emerald-700 rounded-lg flex items-center gap-2 hover:bg-gray-100 transition">
+              Mulai Deteksi
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* ====== GRID: Aktivitas Terbaru & Distribusi ====== */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* ====== Aktivitas Terbaru ====== */}
+            <div className="bg-white rounded-xl p-6 border shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Aktivitas Terbaru</h3>
+                {loading.recent && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    Loading...
+                  </div>
+                )}
+              </div>
+
+              {loading.recent ? (
+                // Skeleton loader for recent activities
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="border rounded-lg p-3 animate-pulse">
+                      <div className="h-4 w-32 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-gray-200 rounded"></div>
                     </div>
                   ))}
                 </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
-                  <button 
-                    onClick={() => document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="bg-white text-blue-700 px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold transition-colors hover:bg-blue-50 shadow-md flex items-center gap-2 justify-center text-sm sm:text-base"
-                  >
-                    Lihat Paket Harga
-                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
-                  <button 
-                    onClick={() => router.push('/elearning')}
-                    className="border-2 border-white text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold transition-colors hover:bg-white hover:text-blue-700 text-sm sm:text-base"
-                  >
-                    Jelajahi Kursus
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex justify-center lg:justify-end order-1 lg:order-2">
-                <div className="relative w-full max-w-xs sm:max-w-sm">
-                  <Image
-                    src="/home.png"
-                    alt="Home"
-                    width={500}
-                    height={400}
-                    className="rounded-xl object-cover shadow-lg w-full h-auto"
-                  />
-                  <div className="absolute -bottom-3 -left-3 bg-white rounded-xl p-2 sm:p-3 shadow-md">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-green-100 p-1.5 sm:p-2 rounded-lg">
-                        <Award className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                      </div>
+              ) : recentActivities.length > 0 ? (
+                <div className="space-y-3">
+                  {recentActivities.map((activity, i) => (
+                    <div key={i} className="flex justify-between items-center border rounded-lg p-3 hover:bg-gray-50">
                       <div>
-                        <p className="font-semibold text-gray-800 text-xs sm:text-sm">300+</p>
-                        <p className="text-xs text-gray-600">Pemenang Lomba</p>
+                        <div className="font-medium text-gray-800">{activity.diseaseName}</div>
+                        <div className="text-xs text-gray-500">{getTimeAgo(activity.time)}</div>
                       </div>
+                      <button className="text-xs text-emerald-600 hover:underline">Detail</button>
                     </div>
-                  </div>
+                  ))}
                 </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">Belum ada aktivitas deteksi</div>
+                  <div className="text-sm text-gray-500">Mulai deteksi pertama Anda!</div>
+                </div>
+              )}
+            </div>
+
+            {/* ====== Distribusi Penyakit ====== */}
+            <div className="bg-white rounded-xl p-6 border shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Distribusi Penyakit</h3>
+                {loading.chart && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    Loading...
+                  </div>
+                )}
               </div>
-            </div>
-          </section>
 
-          {/* Statistik Section */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {stats.map((stat, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg p-3 sm:p-4 shadow-md border border-gray-200"
-                >
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg text-blue-700">
-                      {stat.icon}
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-gray-800">{stat.value}</h3>
-                      <p className="text-gray-600 text-xs">{stat.label}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Features Section */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="text-center mb-6 md:mb-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                Keunggulan Platform Kami
-              </h2>
-              <p className="text-gray-700 max-w-2xl mx-auto text-xs sm:text-sm px-2">
-                Dapatkan pengalaman belajar terbaik dengan fitur-fitur premium yang kami sediakan
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg p-3 sm:p-4 shadow-md border border-gray-200 text-center"
-                >
-                  <div className="bg-blue-100 p-2 sm:p-3 rounded-lg w-fit mx-auto mb-2 sm:mb-3 text-blue-700">
-                    {feature.icon}
-                  </div>
-                  <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-800">{feature.title}</h3>
-                  <p className="text-gray-600 text-xs leading-relaxed">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Pricing Section */}
-          <section id="packages-section" className="w-full max-w-7xl mx-auto">
-            <div className="text-center mb-6 md:mb-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 sm:mb-3">
-                Paket Berlangganan
-              </h2>
-              <p className="text-gray-600 text-xs sm:text-sm max-w-2xl mx-auto px-2">
-                Pilih paket berlangganan yang sesuai dengan kebutuhan belajar Anda. Akses semua materi selama periode berlangganan!
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan, index) => (
-                <div
-                  key={index}
-                  className={`bg-white rounded-xl p-4 sm:p-6 shadow-lg border-2 ${
-                    plan.popular 
-                      ? 'border-blue-600 relative' 
-                      : 'border-gray-200'
-                  }`}
-                >
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                        Paling Populer
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="text-center mb-4 sm:mb-6">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{plan.name}</h3>
-                    <div className="flex flex-col items-center gap-1 sm:gap-2 mb-2">
-                      <div className="flex items-baseline gap-1 sm:gap-2">
-                        <span className="text-sm sm:text-xl line-through text-gray-400">{plan.originalPrice}</span>
-                        <span className="text-lg sm:text-2xl font-bold text-blue-600">{plan.price}</span>
+              {loading.chart ? (
+                // Skeleton loader for distribution
+                <div className="space-y-5">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i}>
+                      <div className="flex justify-between mb-1">
+                        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
                       </div>
-                      <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                        Hemat {plan.discount}
-                      </span>
+                      <div className="w-full h-2 bg-gray-200 rounded-full"></div>
                     </div>
-                    <p className="text-gray-600 font-semibold text-sm">{plan.duration} Akses Penuh</p>
-                  </div>
-
-                  <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50 rounded-lg text-center">
-                    <p className="text-blue-700 font-semibold text-xs sm:text-sm">
-                      ✅ Akses ke SEMUA Materi Pembelajaran
-                    </p>
-                  </div>
-
-                  <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-gray-600">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-xs sm:text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button 
-                    onClick={() => handlePackageSelect(plan.link)}
-                    className={`w-full py-2.5 sm:py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base ${
-                      plan.popular
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                    }`}
-                  >
-                    {plan.buttonText}
-                  </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-6 md:mt-8">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 max-w-2xl mx-auto">
-                <p className="text-green-700 font-semibold text-sm sm:text-base">
-                  💫 Spesial Diskon 70%! Akses semua materi dengan harga terjangkau
-                </p>
-                <p className="text-green-600 text-xs sm:text-sm mt-1">
-                  Dapatkan kesempatan menjadi Brand Ambassador dan berbagai benefit eksklusif lainnya
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Testimonials Section */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-blue-700 rounded-xl p-4 md:p-6 text-white">
-              <div className="text-center mb-6 md:mb-8">
-                <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
-                  Testimoni Peserta
-                </h2>
-                <p className="text-blue-100 text-xs sm:text-sm max-w-2xl mx-auto px-2">
-                  Dengarkan pengalaman langsung dari peserta yang telah merasakan manfaat program berlangganan kami
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-3">
-                {testimonials.map((testimonial, index) => (
-                  <div
-                    key={index}
-                    className="bg-blue-600 rounded-lg p-3 sm:p-4 shadow-lg"
-                  >
-                    <div className="flex gap-1 mb-2 sm:mb-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" 
-                        />
-                      ))}
+              ) : distribution.length > 0 ? (
+                <div className="space-y-5">
+                  {distribution.map((item, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between mb-1">
+                        <div className="text-sm">{item.name}</div>
+                        <div className="text-sm">{item.percentage}%</div>
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`${getDiseaseColor(item.name)} h-full rounded-full transition-all duration-500`}
+                          style={{ width: `${item.percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{item.count} kasus</div>
                     </div>
-                    <p className="text-blue-100 italic mb-2 sm:mb-3 leading-relaxed text-xs sm:text-sm">
-                      &quot;{testimonial.text}&quot;
-                    </p>
-                    <div>
-                      <p className="font-semibold text-sm">{testimonial.name}</p>
-                      <p className="text-blue-200 text-xs">{testimonial.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">Belum ada data distribusi</div>
+                  <div className="text-sm text-gray-500">Lakukan deteksi untuk melihat distribusi penyakit</div>
+                </div>
+              )}
             </div>
-          </section>
-
-          {/* Alur Pembelajaran */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-blue-100 rounded-xl p-4 md:p-6">
-              <div className="text-center mb-6 md:mb-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                  Alur Pembelajaran
-                </h2>
-                <p className="text-gray-700 max-w-2xl mx-auto text-xs sm:text-sm px-2">
-                  Ikuti langkah-langkah sistematis untuk mencapai kesuksesan dalam kompetisi
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
-                {learningPath.map((step, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-lg p-3 sm:p-4 shadow-md text-center"
-                  >
-                    <div className="bg-blue-700 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold mb-2 sm:mb-3 mx-auto">
-                      {step.step}
-                    </div>
-                    <div className="bg-blue-200 text-blue-700 p-1.5 sm:p-2 rounded-lg w-fit mx-auto mb-2 sm:mb-3">
-                      {step.icon}
-                    </div>
-                    <h3 className="font-bold text-sm sm:text-base mb-1 sm:mb-2 text-gray-800">{step.title}</h3>
-                    <p className="text-gray-600 leading-relaxed text-xs sm:text-sm">{step.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="w-full max-w-7xl mx-auto">
-            <div className="bg-blue-700 rounded-xl p-4 md:p-6 text-white text-center">
-              <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
-                Siap Mengembangkan Potensimu?
-              </h2>
-              <p className="text-blue-100 mb-4 sm:mb-6 max-w-2xl mx-auto text-xs sm:text-sm px-2">
-                Bergabung dengan ribuan peserta lainnya dan raih prestasi terbaik melalui program kami.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                <button 
-                  onClick={() => document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white text-blue-700 px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold transition-colors hover:bg-blue-50 shadow-md flex items-center gap-2 justify-center text-sm sm:text-base"
-                >
-                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Pilih Paket Belajar
-                </button>
-                <button 
-                  onClick={() => router.push('/elearning')}
-                  className="border-2 border-white text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold transition-colors hover:bg-white hover:text-blue-700 text-sm sm:text-base"
-                >
-                  Lihat Kursus
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
-      </LayoutNavbar>
-      <Footer/>
-    </>
-  )
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }

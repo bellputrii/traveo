@@ -19,8 +19,8 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ambil Prestasi",
-  description: "Ambil Prestasi adalah platform manajemen pembelajaran daring untuk mentor dan siswa.",
+  title: "PadiCheckAI",
+  description: "A platform for rice leaf disease detection using AI.",
 };
 
 export default async function RootLayout({
