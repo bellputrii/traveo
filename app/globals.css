@@ -260,3 +260,30 @@ label.required::after {
   content: " *";
   color: var(--color-destructive);
 }
+
+/* globals.css atau app/globals.css */
+
+/* Menghilangkan highlight hitam saat tombol diklik di mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optional: Menambahkan styling untuk focus state yang lebih baik */
+button:focus, 
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  ring-width: 2px;
+}
+
+/* Untuk browser WebKit (Chrome, Safari, dll) */
+button:active {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Untuk Firefox */
+button::-moz-focus-inner {
+  border: 0;
+}

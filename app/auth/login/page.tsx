@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/(auth)/login/page.tsx
 'use client';
 
@@ -352,7 +353,7 @@ export default function LoginPage() {
           {/* Register Link */}
           <div className="text-center pt-4 border-t border-gray-100">
             <p className="text-gray-600 text-sm">
-              Don't have an account?{' '}
+              Don`t have an account?{' '}
               <Link 
                 href="/auth/register" 
                 className="text-emerald-600 font-medium hover:text-emerald-500"
