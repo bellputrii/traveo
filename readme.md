@@ -1,178 +1,119 @@
-# 🌾 **PadiCheck AI — Rice Leaf Disease Detection**
 
-**PadiCheck AI** adalah platform berbasis kecerdasan buatan yang dirancang untuk membantu petani dan masyarakat dalam **mendeteksi penyakit pada daun padi secara otomatis** melalui teknologi *image detection*.
-Dengan mengunggah foto daun padi, pengguna dapat memperoleh informasi lengkap mengenai penyakit yang terdeteksi, tingkat akurasi prediksi, serta rekomendasi perawatan yang relevan.
+-----
 
-Platform ini bertujuan untuk meningkatkan produktivitas pertanian melalui pemanfaatan teknologi modern yang mudah digunakan.
+# ✈️ Traveo — Travel Article Management Platform
 
----
+[](https://www.google.com/search?q=https://traveo.vercel.app)
+[](https://nextjs.org/)
+[](https://extra-brooke-yeremiadio-46b2183e.koyeb.app)
 
-## 🚀 **Fitur Utama**
+**Traveo** adalah solusi *Content Management System* (CMS) modern yang berfokus pada manajemen konten artikel perjalanan. Dibangun menggunakan **Next.js 15** dan pola arsitektur **Redux** untuk manajemen *state* yang *reliable*, Traveo menawarkan antarmuka pengguna yang cepat, *scalable*, dan berinteraksi secara *seamless* dengan API backend eksternal.
 
-### 🔎 **1. Deteksi Penyakit Daun Padi (AI Image Detection)**
+Platform ini memberdayakan penulis dan admin untuk mengelola konten, kategori, dan interaksi komunitas (komentar) secara efisien.
 
-Pengguna dapat mengunggah gambar daun padi untuk dianalisis oleh model AI.
-Sistem akan menghasilkan laporan deteksi berisi informasi penyakit, tingkat akurasi, status kesehatan, dan saran penanganan.
+-----
 
-### 📚 **2. Artikel Edukatif**
+## 🔗 Live Deployment
 
-Pengguna dapat membaca berbagai artikel terkait:
+Proyek ini telah dideploy dan tersedia untuk publik di tautan berikut:
 
-* Penyakit pada tanaman padi
-* Teknik perawatan dan pencegahan penyakit
-* Informasi agrikultur lainnya
+**🌐 [traveo.vercel.app](https://www.google.com/search?q=https://traveo.vercel.app)**
 
-Artikel dapat diakses secara publik tanpa perlu login.
+-----
 
-### 📝 **3. Riwayat Deteksi**
+## ✨ Fitur Utama
 
-Pengguna yang telah login dapat mengakses riwayat deteksi yang mencakup:
+Traveo menyediakan serangkaian fitur lengkap untuk pengelolaan konten:
 
-* Foto daun yang pernah diunggah
-* Jenis penyakit yang ditemukan
-* Akurasi prediksi
-* Waktu deteksi
-* Detail penyakit
+| Kategori | Fitur | Deskripsi |
+| :--- | :--- | :--- |
+| **Artikel** | **CRUD Artikel** | Operasi lengkap (Create, Read, Update, Delete) untuk artikel perjalanan, termasuk editor teks yang kaya fitur. |
+| **Struktur** | **CRUD Kategori** | Manajemen kategori artikel untuk pengorganisasian konten yang logis. |
+| **Komunitas** | **CRUD Komentar** | Mengelola komentar pada setiap artikel untuk memfasilitasi interaksi pengguna. |
+| **Media** | **Upload Gambar** | Integrasi pengunggahan gambar yang dibutuhkan untuk *thumbnail* dan konten artikel. |
+| **Pengguna** | **Manajemen Profil** | Pengguna dapat memperbarui detail profil seperti nama, email, dan foto profil. |
 
-### 👤 **4. Manajemen Profil Pengguna**
+-----
 
-Pengguna dapat memperbarui:
+## 📐 Arsitektur & Teknologi
 
-* Nama
-* Email
-* Foto profil
-* Data lain yang relevan
+Traveo menerapkan arsitektur *frontend-centric* dengan *state management* yang ketat, memastikan pemisahan tanggung jawab yang jelas.
 
-### 🛠 **5. Manajemen Artikel untuk Admin**
+### 1\. Frontend & State Management
 
-Admin memiliki akses untuk mengelola konten artikel, meliputi:
+Kami menggunakan pola **Redux Pattern** untuk mengelola *state* aplikasi.
 
-* Membuat artikel baru
-* Mengedit artikel
-* Menghapus artikel
-* Mengatur struktur konten
+  * **Framework:** Next.js 15 (TypeScript)
+  * **State Management:** Redux Toolkit (RTK)
+      * Menggunakan **RTK Query** untuk menangani *data fetching, caching*, dan *state* asinkronus dengan efisiensi tinggi, mengurangi kebutuhan akan *boilerplate* Redux.
+  * **Styling:** Tailwind CSS, Radix UI, dan Shadcn/ui untuk komponen yang *headless* dan *accessible*.
 
----
+### 2\. Backend (API External)
 
-## 🧩 **Arsitektur Sistem**
+Aplikasi *frontend* berinteraksi secara eksklusif dengan *Rest API* eksternal.
 
-PadiCheck AI menggunakan arsitektur multi-layer yang memisahkan modul AI dan modul API utama:
+  * **Endpoint API:** `https://extra-brooke-yeremiadio-46b2183e.koyeb.app`
+  * **Interaksi:** Menggunakan **Axios** dan **RTK Query** untuk komunikasi data melalui *JSON*.
 
-### **1. Model AI (Flask)**
+### 3\. Pengembangan & Kualitas Kode
 
-* Dibangun menggunakan **Flask**
-* Bertanggung jawab memproses gambar dan menjalankan model Machine Learning
-* Menghasilkan prediksi penyakit, akurasi, serta metadata deteksi
+  * **Monorepo Tooling:** Turbopack (Digunakan oleh Next.js 15).
+  * **Linting & Formatting:** ESLint dan Prettier.
+  * **Commit Management:** Husky dan Commitlint untuk menegakkan konvensi pesan commit profesional.
 
-### **2. Backend Utama (NestJS)**
+-----
 
-* Mengelola alur data antara frontend dan modul AI
-* Menyimpan hasil deteksi pada database
-* Mengelola autentikasi, artikel, user, dan riwayat deteksi
-* Mengonsumsi API dari Flask untuk memproses hasil model
-* Menggunakan pendekatan RESTful API dengan keamanan JWT
+## 🛠️ Panduan Pengembangan Lokal
 
-### **3. Frontend (Next.js)**
+Ikuti langkah-langkah ini untuk menjalankan proyek secara lokal.
 
-* Menyediakan antarmuka yang responsif untuk pengguna
-* Dibangun menggunakan **Next.js 15 + TypeScript**
-* Di-deploy melalui **Vercel** untuk kinerja optimal
-
----
-
-## ⚙️ **Tech Stack**
-
-### **Frontend**
-
-* Next.js 15
-* TypeScript
-* Tailwind CSS
-* Radix UI
-* Recharts
-* lucide-react / @tabler/icons-react
-* @dnd-kit/core & sortable
-* sonner notifications
-* Turbopack
-* ESLint + Husky + commitlint
-
-### **Backend**
-
-* NestJS
-* Prisma / PostgreSQL
-* JWT Authentication
-* Multer untuk upload gambar
-* Railway / VPS deployment
-
-### **AI Model**
-
-* Flask
-* TensorFlow / PyTorch
-* OpenCV
-* Model klasifikasi penyakit daun padi
-
----
-
-## 🧠 **Panduan Development**
-
-### 1. Clone Repository
+### 1\. Clone Repositori
 
 ```bash
-git clone https://github.com/username/padicheck-ai.git
-cd padicheck-ai
+git clone https://github.com/username/traveo-web.git
+cd traveo-web
 ```
 
-### 2. Install Dependencies
+### 2\. Instalasi Dependensi
 
 ```bash
 npm install
+# atau
+yarn install
 ```
 
-### 3. Jalankan Project (Frontend)
+### 3\. Konfigurasi Lingkungan
+
+Buat file `.env.local` di root direktori dan tambahkan URL API eksternal:
+
+```env
+# Variabel yang diakses di browser
+NEXT_PUBLIC_API_URL=https://extra-brooke-yeremiadio-46b2183e.koyeb.app
+
+# Tambahkan kunci API atau token rahasia lainnya di sini
+```
+
+### 4\. Jalankan Server Pengembangan
 
 ```bash
 npm run dev
+# atau
+yarn dev
 ```
 
-### 4. Build untuk Produksi
+Aplikasi akan tersedia di `http://localhost:3000`.
 
-```bash
-npm run build
-npm start
-```
+-----
 
-*(Untuk backend NestJS dan Flask model, jalankan sesuai dokumentasi masing-masing folder.)*
+## 🚀 Deployment
 
----
+| Lingkungan | Platform | Tautan | Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | **Vercel** | [traveo.vercel.app](https://www.google.com/search?q=https://traveo.vercel.app) | Memanfaatkan fitur SSR/SSG/ISR Next.js untuk performa optimal. |
+| **Backend API** | Koyeb | `https://extra-brooke-yeremiadio-46b2183e.koyeb.app` | Dikelola secara independen dari proyek ini. |
 
-## 🌐 **Deployment**
+-----
 
-### **Frontend**
+## 📜 Lisensi
 
-* Dideploy melalui **Vercel**
-* Sistem build menggunakan **Turbopack**
-
-### **Backend (NestJS)**
-
-* Dideploy pada **Railway** atau **VPS**
-* Mengelola API utama & database
-
-### **Model AI (Flask)**
-
-* Dideploy terpisah, terintegrasi dengan backend melalui API internal
-
----
-
-## 💡 **Visi PadiCheck AI**
-
-Menjadi solusi teknologi berbasis AI yang membantu petani mengenali penyakit tanaman dengan cepat, akurat, dan mudah, sehingga mendukung peningkatan produktivitas pertanian Indonesia.
-
----
-
-## 🧾 **Lisensi**
-
-Proyek ini dilindungi oleh lisensi pribadi.
-Dilarang memperbanyak, menyalin, atau mendistribusikan ulang tanpa izin resmi.
-
----
-
-### ✨ Dibangun dengan komitmen untuk mendukung pertanian berkelanjutan melalui inovasi teknologi.
+Proyek ini dilindungi oleh lisensi pribadi. Dilarang memperbanyak, menyalin, atau mendistribusikan ulang kode tanpa izin resmi dari pemilik proyek.
