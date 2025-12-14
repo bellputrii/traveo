@@ -1,10 +1,10 @@
 "use client";
 
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { SectionCards } from "@/components/section-cards";
-import { DashboardLoading } from "@/components/dashboard/loading";
-import { ErrorState } from "@/components/error-state";
-import { useDashboard } from "@/hooks/use-dashboard";
+import { ChartAreaInteractive } from "../../components/chart-area-interactive";
+import { SectionCards } from "../../components/section-cards";
+import { DashboardLoading } from "../../components/dashboard/loading";
+import { ErrorState } from "../../components/error-state";
+import { useDashboard } from "../../hooks/use-dashboard";
 
 export function DashboardContent() {
     const { data, isLoading, error, refetch } = useDashboard();

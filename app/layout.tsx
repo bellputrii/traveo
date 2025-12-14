@@ -1,60 +1,26 @@
-import type { Metadata } from "next";
-import { Poppins, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ActiveThemeProvider } from "@/components/active-theme";
-import { Toaster } from "@/components/ui/sonner";
-import { cookies } from "next/headers";
-import { cn } from "@/lib/utils";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import Providers from './providers';
+import './globals.css';
 
-const fontSans = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const fontMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "PadiCheckAI",
-  description: "A platform for rice leaf disease detection using AI.",
+  title: 'Traveo',
+  description: 'Your Ultimate Travel Companion',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const cookieStore = await cookies();
-  const activeThemeValues = cookieStore.get("activeTheme")?.value || "default";
-  const isScaled = activeThemeValues.endsWith("-scaled");
-
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "bg-background overscroll-none font-sans antialiased",
-          fontSans.variable,
-          fontMono.variable,
-          activeThemeValues ? `theme-${activeThemeValues}` : "",
-          isScaled ? "theme-scaled" : ""
-        )}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
-          <ActiveThemeProvider initialTheme={activeThemeValues}>
-            {children}
-            <Toaster />
-          </ActiveThemeProvider>
-        </ThemeProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
