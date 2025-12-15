@@ -4,13 +4,15 @@ import {
   getArticle, 
   createArticle, 
   updateArticle, 
-  deleteArticle 
+  deleteArticle,
+  getCategories
 } from './articlesThunk';
 import { ArticlesState } from './articlesTypes';
 
 const initialState: ArticlesState = {
   articles: [],
   currentArticle: null,
+  categories: [],
   loading: false,
   error: null,
   pagination: {
@@ -35,6 +37,14 @@ const articlesSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
+    },
+
+    // Tambahkan reducer untuk modal
+    setCurrentArticle: (state, action) => {
+      state.currentArticle = action.payload;
+    },
+    clearCategories: (state) => {
+      state.categories = [];
     },
   },
   extraReducers: (builder) => {
@@ -122,8 +132,28 @@ const articlesSlice = createSlice({
       state.loading = false;
       state.error = action.payload as string || 'Failed to delete article';
     });
+
+    // Get Categories
+    builder.addCase(getCategories.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getCategories.fulfilled, (state, action) => {
+      state.loading = false;
+      state.categories = action.payload.data || [];
+    });
+    builder.addCase(getCategories.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string || 'Failed to fetch categories';
+    });
   },
 });
 
-export const { clearArticles, clearCurrentArticle, clearError } = articlesSlice.actions;
+export const { 
+  clearArticles, 
+  clearCurrentArticle, 
+  clearError,
+  setCurrentArticle,
+  clearCategories 
+} = articlesSlice.actions;
 export default articlesSlice.reducer;

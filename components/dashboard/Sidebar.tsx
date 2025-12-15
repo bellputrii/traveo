@@ -89,7 +89,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }: SidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'articles', label: 'Articles', icon: FileText, path: '/articles' },
     { id: 'categories', label: 'Categories', icon: FolderTree, path: '/categories' },
-    { id: 'comments', label: 'Comments', icon: MessageSquare, path: '/comments' },
+    { id: 'comments', label: 'Comments', icon: MessageSquare, path: '/comment' },
   ];
 
   // Menu items secondary (settings & profile)

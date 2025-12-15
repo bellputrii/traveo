@@ -5,8 +5,40 @@ import {
   ArticlesResponse, 
   ArticleResponse, 
   CreateArticleData, 
-  UpdateArticleData 
+  UpdateArticleData,
+  CategoriesResponse,
 } from '../articles/articlesTypes';
+
+
+// Get categories
+export const getCategories = createAsyncThunk<CategoriesResponse, void, { rejectValue: string }>(
+  'articles/getCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        return rejectWithValue('No token found');
+      }
+
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/categories?populate=*`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error?.message || 
+        error.response?.data?.message || 
+        'Failed to fetch categories'
+      );
+    }
+  }
+);
 
 // Get all articles
 export const getArticles = createAsyncThunk<ArticlesResponse, number | void, { rejectValue: string }>(
@@ -135,8 +167,9 @@ export const updateArticle = createAsyncThunk<
 );
 
 // Delete article
+// Delete article - Fixed version
 export const deleteArticle = createAsyncThunk<
-  { documentId: string; response: any }, 
+  { documentId: string; success: boolean }, 
   string, 
   { rejectValue: string }
 >(
@@ -157,8 +190,15 @@ export const deleteArticle = createAsyncThunk<
         }
       );
       
-      return { documentId, response: response.data };
+      console.log('Delete API response:', response.data);
+      
+      // Return simple object
+      return { 
+        documentId, 
+        success: true 
+      };
     } catch (error: any) {
+      console.error('Delete API error:', error.response || error);
       return rejectWithValue(
         error.response?.data?.error?.message || 
         error.response?.data?.message || 
