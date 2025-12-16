@@ -19,8 +19,49 @@ import {
   Loader2,
   X,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  CloudUpload
 } from 'lucide-react';
+
+// Fungsi untuk upload image ke API khusus menggunakan token dari localStorage
+const uploadImageToAPI = async (file: File): Promise<string> => {
+  try {
+    // Ambil token dari localStorage
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found. Please login first.');
+    }
+
+    const formData = new FormData();
+    formData.append("files", file, file.name);
+
+    const response = await fetch("https://extra-brooke-yeremiadio-46b2183e.koyeb.app/api/upload", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Upload API result:', result);
+    
+    // Dari contoh response, ambil URL dari Cloudinary
+    if (Array.isArray(result) && result.length > 0 && result[0].url) {
+      return result[0].url; // URL dari Cloudinary
+    }
+    
+    throw new Error('Invalid response format from upload API');
+  } catch (error: any) {
+    console.error('Upload image error:', error);
+    throw new Error(error.message || 'Failed to upload image');
+  }
+};
 
 export default function CreateArticlePage() {
   const router = useRouter();
@@ -38,10 +79,10 @@ export default function CreateArticlePage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [activeMenu, setActiveMenu] = useState('articles');
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -74,7 +115,7 @@ export default function CreateArticlePage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -92,7 +133,7 @@ export default function CreateArticlePage() {
 
     setImageFile(file);
     
-    // Create preview
+    // Create preview locally
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
@@ -110,54 +151,86 @@ export default function CreateArticlePage() {
     }
 
     setIsSubmitting(true);
-    setUploadStatus('uploading');
+    setIsUploading(true);
     setUploadProgress(0);
     dispatch(clearError());
 
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev === null || prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
+      let imageUrl = formData.cover_image_url;
+      
+      // Upload gambar ke API jika ada file
+      if (imageFile) {
+        try {
+          // Cek token sebelum upload
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+          if (!token) {
+            throw new Error('No authentication token found. Please login again.');
           }
-          return prev + 10;
-        });
-      }, 200);
+
+          // Simulasi progress upload
+          const progressInterval = setInterval(() => {
+            setUploadProgress(prev => {
+              if (prev >= 90) {
+                clearInterval(progressInterval);
+                return 90;
+              }
+              return prev + 10;
+            });
+          }, 200);
+
+          // Upload gambar ke API khusus
+          const uploadedUrl = await uploadImageToAPI(imageFile);
+          imageUrl = uploadedUrl;
+          console.log('Image uploaded to Cloudinary:', uploadedUrl);
+          
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+          
+          // Tunggu sebentar untuk menunjukkan progress 100%
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (uploadError: any) {
+          console.error('Upload image error:', uploadError);
+          setFormErrors(prev => ({ 
+            ...prev, 
+            image: 'Failed to upload image: ' + uploadError.message,
+            submit: 'Failed to upload image'
+          }));
+          setIsUploading(false);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      setIsUploading(false);
+      setUploadProgress(0);
+
+      // Gunakan category sebagai string (documentId)
+      const categoryId = formData.category || undefined;
 
       const articleData = {
         title: formData.title,
         description: formData.description,
-        cover_image_url: formData.cover_image_url || '',
-        category: formData.category || undefined,
+        cover_image_url: imageUrl, // URL dari Cloudinary
+        category: categoryId,
       };
 
-      // Kirim dengan imageFile jika ada
-      await dispatch(createArticle({ 
-        data: articleData, 
-        imageFile: imageFile || undefined 
-      })).unwrap();
+      // Kirim articleData langsung (tanpa wrapper { data: ... })
+      await dispatch(createArticle(articleData)).unwrap();
       
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      setUploadStatus('success');
-      
-      // Tunggu sebentar sebelum redirect
-      setTimeout(() => {
-        router.push('/articles');
-      }, 1000);
+      // Redirect ke dashboard articles setelah sukses
+      router.push('/articles');
       
     } catch (err: any) {
       console.error('Create article error:', err);
-      setUploadStatus('error');
       setFormErrors(prev => ({ 
         ...prev, 
         submit: err.message || 'Failed to create article' 
       }));
     } finally {
       setIsSubmitting(false);
-      setUploadProgress(null);
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -182,8 +255,6 @@ export default function CreateArticlePage() {
     setImagePreview('');
     setImageFile(null);
     setFormData(prev => ({ ...prev, cover_image_url: '' }));
-    setUploadStatus('idle');
-    setUploadProgress(null);
   };
 
   if (!isAuthenticated) {
@@ -278,12 +349,23 @@ export default function CreateArticlePage() {
               </div>
             )}
 
-            {/* Success Message */}
-            {uploadStatus === 'success' && (
-              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm">Article created successfully! Redirecting...</p>
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
+                <div className="flex items-center gap-3 mb-2">
+                  <CloudUpload className="w-5 h-5" />
+                  <div className="flex-1">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Uploading image to Cloudinary...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -349,7 +431,7 @@ export default function CreateArticlePage() {
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent disabled:opacity-50"
                         disabled={isSubmitting}
                       >
                         <option value="">Select a category (optional)</option>
@@ -372,31 +454,12 @@ export default function CreateArticlePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Cover Image *
+                      {imageFile && (
+                        <span className="ml-2 text-xs text-green-600">
+                          (Will be uploaded to Cloudinary)
+                        </span>
+                      )}
                     </label>
-                    
-                    {/* Upload Progress */}
-                    {uploadProgress !== null && (
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                          <span>
-                            {uploadStatus === 'uploading' ? 'Uploading...' : 
-                             uploadStatus === 'success' ? 'Uploaded!' : 
-                             'Uploading'}
-                          </span>
-                          <span>{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              uploadStatus === 'success' ? 'bg-green-500' :
-                              uploadStatus === 'error' ? 'bg-red-500' :
-                              'bg-blue-500'
-                            }`}
-                            style={{ width: `${uploadProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
                     
                     {/* Image Preview */}
                     {imagePreview ? (
@@ -416,11 +479,17 @@ export default function CreateArticlePage() {
                             <X className="w-4 h-4" />
                           </button>
                         </div>
+                        <div className="p-3 bg-gray-50 border-t border-gray-200">
+                          <div className="flex items-center text-xs text-gray-600">
+                            <CloudUpload className="w-3 h-3 mr-1" />
+                            <span>File selected: {imageFile?.name}</span>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <label className="block">
                         <div className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                          formErrors.image ? 'border-red-300' : 'border-gray-300 hover:border-[#1f3a5f]'
+                          formErrors.image ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-[#1f3a5f]'
                         } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Upload className="w-12 h-12 mb-3 text-gray-400" />
@@ -429,6 +498,9 @@ export default function CreateArticlePage() {
                             </p>
                             <p className="text-xs text-gray-500">
                               PNG, JPG, GIF up to 5MB
+                            </p>
+                            <p className="text-xs text-blue-500 mt-2">
+                              Images will be uploaded to Cloudinary
                             </p>
                           </div>
                           <input
@@ -461,12 +533,12 @@ export default function CreateArticlePage() {
                             }
                           }}
                           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent disabled:opacity-50"
-                          placeholder="Or enter image URL"
+                          placeholder="Or enter Cloudinary image URL"
                           disabled={isSubmitting || !!imageFile}
                         />
                       </div>
                       <p className="mt-2 text-sm text-gray-500">
-                        {imageFile ? 'Using uploaded file' : 'Provide a URL or upload an image'}
+                        {imageFile ? 'Using uploaded file' : 'Provide a Cloudinary URL or upload an image'}
                       </p>
                     </div>
                   </div>
@@ -519,7 +591,7 @@ export default function CreateArticlePage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {uploadProgress === 100 ? 'Saving...' : 'Publishing...'}
+                      {isUploading ? 'Uploading...' : 'Publishing...'}
                     </>
                   ) : (
                     <>

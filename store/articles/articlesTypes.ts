@@ -39,7 +39,6 @@ export interface ArticleComment {
 export interface Article {
   id: number;
   documentId: string;
-  secretId: string; // Tambahkan ini
   title: string;
   description: string;
   cover_image_url: string;
@@ -118,7 +117,6 @@ export interface CreateArticleData {
   description: string;
   cover_image_url: string;
   category?: string; // documentId dari category
-  secretId?: string; // Optional, bisa di-generate otomatis
 }
 
 // Untuk update artikel - category adalah documentId (string)
@@ -127,7 +125,6 @@ export interface UpdateArticleData {
   description?: string;
   cover_image_url?: string;
   category?: string; // documentId dari category
-  secretId?: string; // Optional untuk update
 }
 
 export interface CreateCategoryData {

@@ -149,11 +149,5 @@ const articlesSlice = createSlice({
   },
 });
 
-export const { 
-  clearArticles, 
-  clearCurrentArticle, 
-  clearError,
-  setCurrentArticle,
-  clearCategories 
-} = articlesSlice.actions;
+export const { clearArticles, clearCurrentArticle, clearError } = articlesSlice.actions;
 export default articlesSlice.reducer;

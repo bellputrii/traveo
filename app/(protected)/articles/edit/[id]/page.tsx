@@ -132,44 +132,54 @@ export default function EditArticlePage() {
 
   // Pada bagian handleSubmit, ubah cara mengonversi categoryId:
 
-     // Pada handleSubmit di EditArticlePage.tsx, ubah menjadi:
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    return;
-  }
+     const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     
+     if (!validateForm()) {
+     return;
+     }
 
-  setIsSubmitting(true);
-  dispatch(clearError());
+     setIsSubmitting(true);
+     dispatch(clearError());
 
-  try {
-    const articleData = {
-      title: formData.title,
-      description: formData.description,
-      cover_image_url: formData.cover_image_url,
-      category: formData.category || undefined,
-    };
+     try {
+     let imageUrl = formData.cover_image_url;
+     
+     // For now, use the existing URL or base64 from file
+     // You can add Cloudinary upload later
+     if (imageFile) {
+          // If using file, use base64 for now
+          imageUrl = imagePreview;
+     }
 
-    // Gunakan imageFile jika ada gambar baru yang diupload
-    await dispatch(updateArticle({
-      documentId,
-      data: articleData,
-      imageFile: imageFile || undefined
-    })).unwrap();
-    
-    router.push('/articles');
-    
-  } catch (err) {
-    console.error('Update article error:', err);
-    setFormErrors(prev => ({ 
-      ...prev, 
-      submit: 'Failed to update article' 
-    }));
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+     // Convert category to string if needed (jika API mengharapkan string)
+     // Atau gunakan langsung string dari formData
+     const categoryId = formData.category || undefined;
+
+     const articleData = {
+          title: formData.title,
+          description: formData.description,
+          cover_image_url: imageUrl,
+          category: categoryId, // Ini sudah string atau undefined
+     };
+
+     await dispatch(updateArticle({
+          documentId,
+          data: articleData
+     })).unwrap();
+     
+     router.push('/articles');
+     
+     } catch (err) {
+     console.error('Update article error:', err);
+     setFormErrors(prev => ({ 
+          ...prev, 
+          submit: 'Failed to update article' 
+     }));
+     } finally {
+     setIsSubmitting(false);
+     }
+     };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
