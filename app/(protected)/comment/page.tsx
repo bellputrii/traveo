@@ -25,11 +25,15 @@ import {
   CheckCircle,
   Loader2,
   AlertCircle,
+  Eye,
+  MoreVertical,
+  User,
+  Globe,
   Check,
   XCircle
 } from 'lucide-react';
 
-// Notification Component dengan type yang sesuai
+// Notification Component
 const Notification = ({ 
   id, 
   type, 
@@ -87,7 +91,7 @@ const NotificationContainer = () => {
 
   return (
     <div className="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-md">
-      {notifications.map((notification: any) => (
+      {notifications.map((notification) => (
         <Notification
           key={notification.id}
           id={notification.id}
@@ -149,7 +153,7 @@ const DeleteConfirmationModal = ({
             </p>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
               <p className="text-sm text-gray-900 italic">
-                `{commentContent.length > 100 ? commentContent.substring(0, 100) + '...' : commentContent}`
+                "{commentContent.length > 100 ? commentContent.substring(0, 100) + '...' : commentContent}"
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 This action cannot be undone.
@@ -234,8 +238,7 @@ const canDeleteComment = (comment: any, currentUser: any) => {
   if (currentUser.role === 'admin') return true;
   
   // User can only delete their own comments
-  // Menggunakan optional chaining untuk menghindari error
-  const commentUserId = comment.user?.documentId || comment.user?.id?.toString() || comment.userId;
+  const commentUserId = comment.user?.documentId || comment.user?.id?.toString();
   const currentUserId = currentUser.documentId || currentUser.id?.toString();
   
   return commentUserId === currentUserId;
@@ -249,8 +252,8 @@ const CommentsContent = () => {
     loading, 
     error, 
     pagination 
-  } = useAppSelector((state: any) => state.comments);
-  const { user } = useAppSelector((state: any) => state.auth);
+  } = useAppSelector((state) => state.comments);
+  const { user } = useAppSelector((state) => state.auth);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,13 +271,10 @@ const CommentsContent = () => {
 
   useEffect(() => {
     if (error) {
-      // Menggunakan object yang sesuai dengan tipe
       dispatch(addNotification({
-        id: Date.now().toString(), // Menambahkan id
         type: 'error',
-        message: error,
-        title: 'Error' // Menambahkan title
-      } as any)); // Menggunakan type assertion untuk menghindari error
+        message: error
+      }));
       dispatch(clearError());
     }
   }, [error, dispatch]);
@@ -282,17 +282,15 @@ const CommentsContent = () => {
   const handleDeleteClick = (comment: any) => {
     if (!canDeleteComment(comment, user)) {
       dispatch(addNotification({
-        id: Date.now().toString(),
         type: 'error',
-        message: 'You can only delete your own comments',
-        title: 'Permission Denied'
-      } as any));
+        message: 'You can only delete your own comments'
+      }));
       return;
     }
     
     setCommentToDelete({
-      documentId: comment.documentId || comment.id?.toString() || '',
-      content: comment.content || ''
+      documentId: comment.documentId,
+      content: comment.content
     });
     setShowDeleteConfirm(true);
   };
@@ -304,21 +302,17 @@ const CommentsContent = () => {
     try {
       await dispatch(deleteComment(commentToDelete.documentId)).unwrap();
       dispatch(addNotification({
-        id: Date.now().toString(),
         type: 'success',
-        message: 'Comment deleted successfully',
-        title: 'Success'
-      } as any));
+        message: 'Comment deleted successfully'
+      }));
       dispatch(getComments(currentPage));
       setShowDeleteConfirm(false);
       setCommentToDelete(null);
     } catch (error: any) {
       dispatch(addNotification({
-        id: Date.now().toString(),
         type: 'error',
-        message: error?.message || 'Failed to delete comment',
-        title: 'Error'
-      } as any));
+        message: error || 'Failed to delete comment'
+      }));
     } finally {
       setIsDeleting(false);
     }
@@ -334,43 +328,34 @@ const CommentsContent = () => {
     
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((comment: any) => {
+      filtered = filtered.filter(comment => {
         return (
           comment.content?.toLowerCase().includes(searchLower) ||
           comment.user?.username?.toLowerCase().includes(searchLower) ||
-          (typeof comment.article?.title === 'string' && comment.article.title.toLowerCase().includes(searchLower))
+          comment.article?.title?.toLowerCase().includes(searchLower)
         );
       });
     }
     
     if (sortBy === 'Newest First') {
-      filtered.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else if (sortBy === 'Oldest First') {
-      filtered.sort((a: any, b: any) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+      filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
     
     return filtered;
   }, [comments, searchTerm, sortBy]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'No date';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return 'Invalid date';
-    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
-
-  // Mengambil nilai pagination dengan aman
-  const pageCount = pagination?.pageCount || 1;
-  const totalItems = pagination?.total || pagination?.totalItems || filteredComments.length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -460,12 +445,12 @@ const CommentsContent = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredComments.map((comment: any) => {
+              {filteredComments.map((comment) => {
                 const canDelete = canDeleteComment(comment, user);
                 
                 return (
                   <div
-                    key={comment.documentId || comment.id || Math.random()}
+                    key={comment.documentId}
                     className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all"
                   >
                     {/* Comment Header */}
@@ -502,7 +487,7 @@ const CommentsContent = () => {
                     {/* Comment Content */}
                     <div className="mb-4">
                       <p className="text-sm text-gray-700 line-clamp-4 leading-relaxed">
-                        {comment.content || 'No content'}
+                        {comment.content}
                       </p>
                     </div>
 
@@ -512,7 +497,7 @@ const CommentsContent = () => {
                         <div className="flex items-center gap-2">
                           <FileText className="w-3.5 h-3.5" />
                           <span className="truncate">
-                            Article: {comment.article.title || `ID: ${comment.article.documentId || comment.articleId || 'N/A'}`}
+                            Article: {comment.article.title || `ID: ${comment.article.documentId}`}
                           </span>
                         </div>
                       )}
@@ -539,11 +524,11 @@ const CommentsContent = () => {
           )}
 
           {/* Pagination */}
-          {!loading && pageCount > 1 && (
+          {!loading && pagination.pageCount > 1 && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 Showing <span className="font-medium">{filteredComments.length}</span> of{' '}
-                <span className="font-medium">{totalItems}</span> comments
+                <span className="font-medium">{pagination.totalItems}</span> comments
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -556,14 +541,14 @@ const CommentsContent = () => {
                 </button>
                 
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, pageCount) }, (_, i) => {
+                  {Array.from({ length: Math.min(5, pagination.pageCount) }, (_, i) => {
                     let pageNum;
-                    if (pageCount <= 5) {
+                    if (pagination.pageCount <= 5) {
                       pageNum = i + 1;
                     } else if (currentPage <= 3) {
                       pageNum = i + 1;
-                    } else if (currentPage >= pageCount - 2) {
-                      pageNum = pageCount - 4 + i;
+                    } else if (currentPage >= pagination.pageCount - 2) {
+                      pageNum = pagination.pageCount - 4 + i;
                     } else {
                       pageNum = currentPage - 2 + i;
                     }
@@ -586,8 +571,8 @@ const CommentsContent = () => {
                 </div>
                 
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
-                  disabled={currentPage === pageCount || loading}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.pageCount))}
+                  disabled={currentPage === pagination.pageCount || loading}
                   className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
                 >
                   Next
@@ -613,25 +598,25 @@ const CommentsContent = () => {
 
 // Main Page Component
 export default function CommentsPage() {
-  const { user, isAuthenticated } = useAppSelector((state: any) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [activeMenu, setActiveMenu] = useState('comments');
-  // Hapus state isSidebarOpen dan setIsSidebarOpen karena tidak ada di SidebarProps
-  // const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen bg-white">
-        {/* Hapus props isOpen dan setIsOpen karena tidak diperlukan */}
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName="Guest"
           userEmail="Silakan login"
-          onSidebarToggle={() => {}} // Fungsi kosong karena sidebar tidak mendukung toggle
-          isSidebarOpen={false} // Default false
+          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          isSidebarOpen={isSidebarOpen}
         />
         <main className="flex-1 md:ml-64 pt-16 p-8">
           <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
@@ -654,17 +639,18 @@ export default function CommentsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hapus props isOpen dan setIsOpen karena tidak diperlukan */}
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}
         userName={user?.name || 'User'}
         userEmail={user?.email || 'user@example.com'}
-        onSidebarToggle={() => {}} // Fungsi kosong karena sidebar tidak mendukung toggle
-        isSidebarOpen={false} // Default false
+        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
       />
       <main className="md:ml-64 pt-16">
         <CommentsContent />

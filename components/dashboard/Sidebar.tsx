@@ -92,7 +92,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }: SidebarProps) {
     { id: 'comments', label: 'Comments', icon: MessageSquare, path: '/comment' },
   ];
 
-  // Menu items secondary (settings & profile)
+  // // Menu items secondary (settings & profile)
   const secondaryMenuItems = [
     { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
   ];
