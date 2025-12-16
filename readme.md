@@ -109,7 +109,7 @@ Aplikasi akan tersedia di `http://localhost:3000`.
 
 | Lingkungan | Platform | Tautan | Keterangan |
 | :--- | :--- | :--- | :--- |
-| **Frontend** | **Vercel** | [traveo.vercel.app](https://www.google.com/search?q=https://traveo.vercel.app) | Memanfaatkan fitur SSR/SSG/ISR Next.js untuk performa optimal. |
+| **Frontend** | **Vercel** | [traveo-eight.vercel.app](https://www.google.com/search?q=https://traveo-eight.vercel.app) | Memanfaatkan fitur SSR/SSG/ISR Next.js untuk performa optimal. |
 | **Backend API** | Koyeb | `https://extra-brooke-yeremiadio-46b2183e.koyeb.app` | Dikelola secara independen dari proyek ini. |
 
 -----
