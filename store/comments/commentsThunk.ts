@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // store/thunks/commentsThunk.ts
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';

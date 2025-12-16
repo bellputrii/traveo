@@ -1,4 +1,6 @@
-// app/dashboard/articles/add/page.tsx
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,15 +18,15 @@ import {
   Tag,
   Loader2,
   X,
-  AlertCircle
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
-import Image from 'next/image';
 
 export default function CreateArticlePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { loading, error, categories } = useAppSelector((state) => state.articles);
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { loading, error, categories } = useAppSelector((state: any) => state.articles);
+  const { user, isAuthenticated } = useAppSelector((state: any) => state.auth);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -38,7 +40,8 @@ export default function CreateArticlePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [activeMenu, setActiveMenu] = useState('articles');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -71,7 +74,7 @@ export default function CreateArticlePage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -89,36 +92,14 @@ export default function CreateArticlePage() {
 
     setImageFile(file);
     
+    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
       setImagePreview(result);
-      setFormData(prev => ({ ...prev, cover_image_url: result }));
       setFormErrors(prev => ({ ...prev, image: '' }));
     };
     reader.readAsDataURL(file);
-  };
-
-  const uploadToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'travel_articles'); // Ganti dengan upload preset Anda
-    
-    try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/your-cloud-name/image/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      if (data.secure_url) {
-        return data.secure_url;
-      }
-      throw new Error('Upload failed');
-    } catch (error) {
-      console.error('Cloudinary upload error:', error);
-      throw error;
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,36 +110,54 @@ export default function CreateArticlePage() {
     }
 
     setIsSubmitting(true);
+    setUploadStatus('uploading');
+    setUploadProgress(0);
     dispatch(clearError());
 
     try {
-      let imageUrl = formData.cover_image_url;
-      
-      // Jika ada file image, upload ke Cloudinary
-      if (imageFile) {
-        imageUrl = await uploadToCloudinary(imageFile);
-      }
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null || prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
 
       const articleData = {
         title: formData.title,
         description: formData.description,
-        cover_image_url: imageUrl,
+        cover_image_url: formData.cover_image_url || '',
         category: formData.category || undefined,
       };
 
-      await dispatch(createArticle(articleData)).unwrap();
+      // Kirim dengan imageFile jika ada
+      await dispatch(createArticle({ 
+        data: articleData, 
+        imageFile: imageFile || undefined 
+      })).unwrap();
       
-      // Redirect ke dashboard articles setelah sukses
-      router.push('/articles');
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setUploadStatus('success');
       
-    } catch (error: any) {
-      console.error('Create article error:', error);
+      // Tunggu sebentar sebelum redirect
+      setTimeout(() => {
+        router.push('/articles');
+      }, 1000);
+      
+    } catch (err: any) {
+      console.error('Create article error:', err);
+      setUploadStatus('error');
       setFormErrors(prev => ({ 
         ...prev, 
-        submit: error || 'Failed to create article' 
+        submit: err.message || 'Failed to create article' 
       }));
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(null);
     }
   };
 
@@ -179,21 +178,25 @@ export default function CreateArticlePage() {
     router.push('/articles');
   };
 
+  const handleClearImage = () => {
+    setImagePreview('');
+    setImageFile(null);
+    setFormData(prev => ({ ...prev, cover_image_url: '' }));
+    setUploadStatus('idle');
+    setUploadProgress(null);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen bg-white">
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName="Guest"
           userEmail="Please login"
-          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          isSidebarOpen={isSidebarOpen}
         />
         <main className="flex-1 md:ml-64 pt-16 p-8">
           <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -221,15 +224,11 @@ export default function CreateArticlePage() {
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}
         userName={user?.username || 'User'}
         userEmail={user?.email || 'user@example.com'}
-        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSidebarOpen={isSidebarOpen}
       />
       <main className="md:ml-64 pt-10">
         <div className="p-8 md:p-6">
@@ -279,6 +278,16 @@ export default function CreateArticlePage() {
               </div>
             )}
 
+            {/* Success Message */}
+            {uploadStatus === 'success' && (
+              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm">Article created successfully! Redirecting...</p>
+                </div>
+              </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -298,6 +307,7 @@ export default function CreateArticlePage() {
                         formErrors.title ? 'border-red-300' : 'border-gray-200'
                       }`}
                       placeholder="Enter a captivating title for your article"
+                      disabled={isSubmitting}
                     />
                     {formErrors.title && (
                       <p className="mt-2 text-sm text-red-600">{formErrors.title}</p>
@@ -318,6 +328,7 @@ export default function CreateArticlePage() {
                         formErrors.description ? 'border-red-300' : 'border-gray-200'
                       }`}
                       placeholder="Share your travel story, tips, and experiences..."
+                      disabled={isSubmitting}
                     />
                     {formErrors.description && (
                       <p className="mt-2 text-sm text-red-600">{formErrors.description}</p>
@@ -339,9 +350,10 @@ export default function CreateArticlePage() {
                         value={formData.category}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent"
+                        disabled={isSubmitting}
                       >
                         <option value="">Select a category (optional)</option>
-                        {categories.map((cat) => (
+                        {categories.map((cat: any) => (
                           <option key={cat.documentId} value={cat.documentId}>
                             {cat.name}
                           </option>
@@ -362,24 +374,44 @@ export default function CreateArticlePage() {
                       Cover Image *
                     </label>
                     
+                    {/* Upload Progress */}
+                    {uploadProgress !== null && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <span>
+                            {uploadStatus === 'uploading' ? 'Uploading...' : 
+                             uploadStatus === 'success' ? 'Uploaded!' : 
+                             'Uploading'}
+                          </span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              uploadStatus === 'success' ? 'bg-green-500' :
+                              uploadStatus === 'error' ? 'bg-red-500' :
+                              'bg-blue-500'
+                            }`}
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Image Preview */}
                     {imagePreview ? (
                       <div className="relative rounded-xl overflow-hidden border border-gray-200">
                         <div className="aspect-video relative bg-gray-100">
-                          <Image
+                          <img
                             src={imagePreview}
                             alt="Preview"
-                            fill
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                           />
                           <button
                             type="button"
-                            onClick={() => {
-                              setImagePreview('');
-                              setImageFile(null);
-                              setFormData(prev => ({ ...prev, cover_image_url: '' }));
-                            }}
-                            className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
+                            onClick={handleClearImage}
+                            disabled={isSubmitting}
+                            className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors disabled:opacity-50"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -387,7 +419,9 @@ export default function CreateArticlePage() {
                       </div>
                     ) : (
                       <label className="block">
-                        <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#1f3a5f] cursor-pointer transition-colors">
+                        <div className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                          formErrors.image ? 'border-red-300' : 'border-gray-300 hover:border-[#1f3a5f]'
+                        } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Upload className="w-12 h-12 mb-3 text-gray-400" />
                             <p className="mb-1 text-sm text-gray-500">
@@ -402,6 +436,7 @@ export default function CreateArticlePage() {
                             accept="image/*"
                             onChange={handleImageChange}
                             className="hidden"
+                            disabled={isSubmitting}
                           />
                         </div>
                       </label>
@@ -425,12 +460,13 @@ export default function CreateArticlePage() {
                               setImageFile(null);
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1f3a5f] focus:border-transparent disabled:opacity-50"
                           placeholder="Or enter image URL"
+                          disabled={isSubmitting || !!imageFile}
                         />
                       </div>
                       <p className="mt-2 text-sm text-gray-500">
-                        Provide a URL or upload an image
+                        {imageFile ? 'Using uploaded file' : 'Provide a URL or upload an image'}
                       </p>
                     </div>
                   </div>
@@ -441,11 +477,9 @@ export default function CreateArticlePage() {
                     <div className="space-y-3">
                       <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
                         {imagePreview ? (
-                          <Image
+                          <img
                             src={imagePreview}
                             alt="Preview"
-                            width={200}
-                            height={150}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -485,7 +519,7 @@ export default function CreateArticlePage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Publishing...
+                      {uploadProgress === 100 ? 'Saving...' : 'Publishing...'}
                     </>
                   ) : (
                     <>

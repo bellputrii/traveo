@@ -6,7 +6,7 @@ import {
   updateCategory, 
   deleteCategory 
 } from './categoriesThunk';
-import { CategoriesState, Notification } from './categoriesTypes';
+import { CategoriesState, Notification, Category } from './categoriesTypes';
 
 const initialState: CategoriesState = {
   categories: [],
@@ -28,6 +28,14 @@ const initialState: CategoriesState = {
   notifications: [],
 };
 
+// Definisikan tipe untuk payload modal
+type ModalType = 'add' | 'edit' | 'view' | 'delete';
+
+interface OpenModalPayload {
+  modal: ModalType;
+  category?: Category;
+}
+
 const categoriesSlice = createSlice({
   name: 'categories',
   initialState,
@@ -44,15 +52,17 @@ const categoriesSlice = createSlice({
       state.error = null;
     },
     // Actions untuk mengontrol modal
-    openModal: (state, action) => {
-      state.modals[action.payload.modal] = true;
-      if (action.payload.category) {
-        state.currentCategory = action.payload.category;
+    openModal: (state, action: PayloadAction<OpenModalPayload>) => {
+      const { modal, category } = action.payload;
+      state.modals[modal] = true;
+      if (category) {
+        state.currentCategory = category;
       }
     },
-    closeModal: (state, action) => {
-      state.modals[action.payload] = false;
-      if (action.payload !== 'view') {
+    closeModal: (state, action: PayloadAction<ModalType>) => {
+      const modal = action.payload;
+      state.modals[modal] = false;
+      if (modal !== 'view') {
         state.currentCategory = null;
       }
     },
@@ -99,7 +109,7 @@ const categoriesSlice = createSlice({
       state.error = action.payload as string || 'Failed to fetch category';
     });
 
-    // Create Article - dengan notifikasi sukses
+    // Create Category
     builder.addCase(createCategory.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -116,7 +126,7 @@ const categoriesSlice = createSlice({
       state.error = action.payload as string || 'Failed to create category';
     });
 
-    // Update Article - dengan notifikasi sukses
+    // Update Category
     builder.addCase(updateCategory.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -141,7 +151,7 @@ const categoriesSlice = createSlice({
       state.error = action.payload as string || 'Failed to update category';
     });
 
-    // Delete Article - dengan notifikasi sukses
+    // Delete Category
     builder.addCase(deleteCategory.pending, (state) => {
       state.loading = true;
       state.error = null;

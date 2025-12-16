@@ -17,7 +17,7 @@ Platform ini memberdayakan penulis dan admin untuk mengelola konten, kategori, d
 
 Proyek ini telah dideploy dan tersedia untuk publik di tautan berikut:
 
-**🌐 [traveo.vercel.app](https://www.google.com/search?q=https://traveo.vercel.app)**
+**🌐 [traveo-eight.vercel.app](https://traveo-eight.vercel.app/)**
 
 -----
 

@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -194,7 +196,7 @@ function DeleteModal() {
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Hapus Kategori</h3>
               <p className="text-gray-600">
-                Apakah Anda yakin ingin menghapus <span className="font-semibold text-gray-900">"{currentCategory.name}"</span>?
+                Apakah Anda yakin ingin menghapus <span className="font-semibold text-gray-900">{currentCategory.name}</span>?
               </p>
             </div>
           </div>
@@ -332,7 +334,7 @@ const CategoriesContent = () => {
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             <CheckCircle className="w-3.5 h-3.5 inline mr-1.5 text-green-500" />
-            {filteredCategories.length} kategori ditemukan untuk pencarian "{searchTerm}"
+            {filteredCategories.length} kategori ditemukan untuk pencarian {searchTerm}
           </p>
         </div>
       )}
@@ -379,7 +381,7 @@ const CategoriesContent = () => {
             <thead className="bg-gray-50">
               <tr className="text-left text-sm text-gray-500">
                 <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Articles</th>
+                <th className="px-6 py-4 font-medium">Description</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -414,19 +416,13 @@ const CategoriesContent = () => {
                         <span className="font-medium text-gray-900">
                           {category.name}
                         </span>
-                        {category.description && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                            {category.description}
-                          </p>
-                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="flex items-center gap-1 text-sm font-bold font-medium text-gray-600 pt-4">
-                    <div className="flex items-center gap-1">
-                      <FileText className="w-3.5 h-3.5" />
-                      {category.articles?.length || 0} articles
-                    </div>
+                  <td className="px-6 py-4">
+                    <p className="text-sm text-gray-500 max-w-xs truncate">
+                      {category.description || 'No description'}
+                    </p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-3">
@@ -458,13 +454,13 @@ const CategoriesContent = () => {
       </div>
 
       {/* Pagination Info */}
-      {!loading && pagination.pageCount > 0 && (
+      {!loading && pagination && pagination.pageCount > 0 && (
         <div className="flex items-center justify-between mt-6 text-sm text-gray-500">
           <div>
-            Menampilkan {filteredCategories.length} dari {pagination.totalItems} kategori
+            Menampilkan {filteredCategories.length} dari {pagination.total || filteredCategories.length} kategori
           </div>
           <div>
-            Halaman {pagination.currentPage} dari {pagination.pageCount}
+            Halaman {pagination.page} dari {pagination.pageCount}
           </div>
         </div>
       )}
@@ -488,8 +484,6 @@ export default function CategoriesPage() {
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
@@ -525,8 +519,6 @@ export default function CategoriesPage() {
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}

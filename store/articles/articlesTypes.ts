@@ -19,7 +19,7 @@ export interface ArticleCategory {
   id: number;
   documentId: string;
   name: string;
-  description: string;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -39,6 +39,7 @@ export interface ArticleComment {
 export interface Article {
   id: number;
   documentId: string;
+  secretId: string; // Tambahkan ini
   title: string;
   description: string;
   cover_image_url: string;
@@ -69,39 +70,11 @@ export interface ArticleResponse {
   meta: object;
 }
 
-export interface CreateArticleData {
-  title: string;
-  description: string;
-  cover_image_url: string;
-  category?: number;
-}
-
-export interface UpdateArticleData {
-  title?: string;
-  description?: string;
-  cover_image_url?: string;
-  category?: number;
-}
-
-export interface ArticlesState {
-  articles: Article[];
-  currentArticle: Article | null;
-  loading: boolean;
-  error: string | null;
-  pagination: {
-    page: number;
-    pageSize: number;
-    pageCount: number;
-    total: number;
-  };
-}
-
-// articlesTypes.ts
 export interface Category {
   id: number;
   documentId: string;
   name: string;
-  description: string;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -120,11 +93,15 @@ export interface CategoriesResponse {
   };
 }
 
-// Update ArticlesState untuk menambahkan categories
+export interface CategoryResponse {
+  data: Category;
+  meta: object;
+}
+
 export interface ArticlesState {
   articles: Article[];
   currentArticle: Article | null;
-  categories: Category[]; // Tambahkan ini
+  categories: Category[];
   loading: boolean;
   error: string | null;
   pagination: {
@@ -135,17 +112,58 @@ export interface ArticlesState {
   };
 }
 
-// Update CreateArticleData dan UpdateArticleData
+// Untuk membuat artikel baru - category adalah documentId (string)
 export interface CreateArticleData {
   title: string;
   description: string;
   cover_image_url: string;
-  category?: string; // Ubah dari number ke string (documentId)
+  category?: string; // documentId dari category
+  secretId?: string; // Optional, bisa di-generate otomatis
 }
 
+// Untuk update artikel - category adalah documentId (string)
 export interface UpdateArticleData {
   title?: string;
   description?: string;
   cover_image_url?: string;
-  category?: string; // Ubah dari number ke string (documentId)
+  category?: string; // documentId dari category
+  secretId?: string; // Optional untuk update
+}
+
+export interface CreateCategoryData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryData {
+  name?: string;
+  description?: string | null;
+}
+
+export interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+  duration?: number;
+}
+
+export interface CategoriesState {
+  categories: Category[];
+  currentCategory: Category | null;
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    page: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+  };
+  modals: {
+    add: boolean;
+    edit: boolean;
+    view: boolean;
+    delete: boolean;
+  };
+  notifications: Notification[];
 }

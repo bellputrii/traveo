@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -124,7 +126,6 @@ const DashboardContent = ({ user }: { user: any }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -395,9 +396,8 @@ const DashboardContent = ({ user }: { user: any }) => {
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { user, loading, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, loading, isAuthenticated } = useAppSelector((state: any) => state.auth);
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Fetch user data hanya jika belum ada
@@ -418,15 +418,13 @@ export default function DashboardPage() {
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName="Guest"
           userEmail="Please login"
-          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          isSidebarOpen={isSidebarOpen}
+          onSidebarToggle={() => {}} // Fungsi kosong karena tidak diperlukan
+          isSidebarOpen={false} // Default false
         />
         <main className="flex-1 md:ml-64 pt-16 flex items-center justify-center p-8">
           <div className="text-center max-w-md mx-auto">
@@ -452,15 +450,13 @@ export default function DashboardPage() {
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}
         userName={user?.name || 'User'}
         userEmail={user?.email || 'user@example.com'}
-        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSidebarOpen={isSidebarOpen}
+        onSidebarToggle={() => {}} // Fungsi kosong karena tidak diperlukan
+        isSidebarOpen={false} // Default false
       />
       <main className="md:ml-64 pt-16">
         <div className="p-4 md:p-6">

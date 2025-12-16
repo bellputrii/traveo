@@ -1,6 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// app/dashboard/articles/edit/[id]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +20,6 @@ import {
   Eye,
   Save
 } from 'lucide-react';
-import Image from 'next/image';
 
 export default function EditArticlePage() {
   const router = useRouter();
@@ -45,7 +42,6 @@ export default function EditArticlePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [activeMenu, setActiveMenu] = useState('articles');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -64,8 +60,8 @@ export default function EditArticlePage() {
   useEffect(() => {
     if (currentArticle) {
       // Check if current user is the owner
-      const currentUserId = user?.documentId || user?.id?.toString();
-      const articleUserId = currentArticle.user?.documentId || currentArticle.user?.id?.toString();
+      const currentUserId = user?.id;
+      const articleUserId = currentArticle.user?.id;
       
       if (currentUserId !== articleUserId) {
         router.push('/articles');
@@ -76,7 +72,7 @@ export default function EditArticlePage() {
         title: currentArticle.title || '',
         description: currentArticle.description || '',
         cover_image_url: currentArticle.cover_image_url || '',
-        category: currentArticle.category?.documentId || '',
+        category: currentArticle.category?.id?.toString() || '',
       });
       
       if (currentArticle.cover_image_url) {
@@ -108,7 +104,7 @@ export default function EditArticlePage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -134,69 +130,46 @@ export default function EditArticlePage() {
     reader.readAsDataURL(file);
   };
 
-  const uploadToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'travel_articles');
+  // Pada bagian handleSubmit, ubah cara mengonversi categoryId:
+
+     // Pada handleSubmit di EditArticlePage.tsx, ubah menjadi:
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+
+  setIsSubmitting(true);
+  dispatch(clearError());
+
+  try {
+    const articleData = {
+      title: formData.title,
+      description: formData.description,
+      cover_image_url: formData.cover_image_url,
+      category: formData.category || undefined,
+    };
+
+    // Gunakan imageFile jika ada gambar baru yang diupload
+    await dispatch(updateArticle({
+      documentId,
+      data: articleData,
+      imageFile: imageFile || undefined
+    })).unwrap();
     
-    try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/your-cloud-name/image/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      if (data.secure_url) {
-        return data.secure_url;
-      }
-      throw new Error('Upload failed');
-    } catch (error) {
-      console.error('Cloudinary upload error:', error);
-      throw error;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    router.push('/articles');
     
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    dispatch(clearError());
-
-    try {
-      let imageUrl = formData.cover_image_url;
-      
-      if (imageFile) {
-        imageUrl = await uploadToCloudinary(imageFile);
-      }
-
-      const articleData = {
-        title: formData.title,
-        description: formData.description,
-        cover_image_url: imageUrl,
-        category: formData.category || undefined,
-      };
-
-      await dispatch(updateArticle({
-        documentId,
-        data: articleData
-      })).unwrap();
-      
-      router.push('/articles');
-      
-    } catch (error: any) {
-      console.error('Update article error:', error);
-      setFormErrors(prev => ({ 
-        ...prev, 
-        submit: error || 'Failed to update article' 
-      }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  } catch (err) {
+    console.error('Update article error:', err);
+    setFormErrors(prev => ({ 
+      ...prev, 
+      submit: 'Failed to update article' 
+    }));
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -226,15 +199,11 @@ export default function EditArticlePage() {
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName="Guest"
           userEmail="Please login"
-          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          isSidebarOpen={isSidebarOpen}
         />
         <main className="flex-1 md:ml-64 pt-16 p-8">
           <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -262,15 +231,11 @@ export default function EditArticlePage() {
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName={user?.username || 'User'}
           userEmail={user?.email || 'user@example.com'}
-          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          isSidebarOpen={isSidebarOpen}
         />
         <main className="md:ml-64 pt-16 p-8">
           <div className="flex items-center justify-center min-h-[400px]">
@@ -286,15 +251,11 @@ export default function EditArticlePage() {
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}
         userName={user?.username || 'User'}
         userEmail={user?.email || 'user@example.com'}
-        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSidebarOpen={isSidebarOpen}
       />
       <main className="md:ml-64 pt-8">
         <div className="p-8 md:p-6">
@@ -416,7 +377,7 @@ export default function EditArticlePage() {
                       >
                         <option value="">Select a category (optional)</option>
                         {categories.map((cat) => (
-                          <option key={cat.documentId} value={cat.documentId}>
+                          <option key={cat.id || cat.documentId} value={cat.id?.toString() || cat.documentId}>
                             {cat.name}
                           </option>
                         ))}
@@ -437,11 +398,10 @@ export default function EditArticlePage() {
                     {imagePreview ? (
                       <div className="relative rounded-xl overflow-hidden border border-gray-200">
                         <div className="aspect-video relative bg-gray-100">
-                          <Image
+                          <img
                             src={imagePreview}
                             alt="Preview"
-                            fill
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                           />
                           <button
                             type="button"

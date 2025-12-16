@@ -1,16 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// articles/page.tsx (updated)
+// articles/page.tsx (updated - tanpa modal)
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { getArticles, deleteArticle } from '../../../store/articles/articlesThunk';
-import { clearError, setCurrentArticle } from '../../../store/articles/articlesSlice';
+import { clearError } from '../../../store/articles/articlesSlice';
 import Sidebar from '../../../components/dashboard/Sidebar';
 import { Header } from '../../../components/dashboard/Header';
-import ArticleModal from '../../../components/dashboard/ArticleModal';
 import {
   Plus,
   Eye,
@@ -28,108 +28,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// Ganti DeleteConfirmationModal dengan versi yang lebih sederhana:
-const DeleteConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  articleTitle, 
-  isDeleting 
-}: { 
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  articleTitle: string;
-  isDeleting: boolean;
-}) => {
-  if (!isOpen) return null;
-
-  // Handle backdrop click
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isDeleting) {
-      onClose();
-    }
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Delete Article</h3>
-              <p className="text-sm text-gray-500">Confirm your action</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="px-6 py-5">
-          <div className="mb-6">
-            <p className="text-gray-700 mb-2">
-              Are you sure you want to delete this article?
-            </p>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                "{articleTitle}"
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                This action cannot be undone.
-              </p>
-            </div>
-          </div>
-
-          {/* Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">
-                All data associated with this article will be permanently removed.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isDeleting}
-            className="px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50"
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-4 h-4" />
-                Delete Article
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 // Simple inline loading skeleton
 const ArticlesCardSkeleton = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -161,19 +59,15 @@ const ArticlesCardSkeleton = () => (
 // Komponen Articles Content
 const ArticlesContent = () => {
   const dispatch = useAppDispatch();
-  const { articles, loading, error, pagination } = useAppSelector((state) => state.articles);
+  const router = useRouter();
+  const { articles, loading, error, pagination } = useAppSelector((state: any) => state.articles);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [sortBy, setSortBy] = useState('Newest First');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  
-  // Delete confirmation modal state
+  // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<{
     id: string;
@@ -227,26 +121,17 @@ const ArticlesContent = () => {
   };
 
   const handleEdit = (article: any) => {
-    setModalMode('edit');
-    setSelectedArticle(article);
-    dispatch(setCurrentArticle(article));
-    setIsModalOpen(true);
+    router.push(`/articles/edit/${article.documentId}`);
   };
 
   const handleView = (article: any) => {
     window.open(`/articles/${article.documentId}`, '_blank');
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedArticle(null);
-    dispatch(clearError());
-  };
-
   // Get unique categories from articles
   const categories = useMemo(() => {
     const categorySet = new Set<string>(['All Categories']);
-    articles.forEach(article => {
+    articles.forEach((article: any) => {
       if (article.category?.name) {
         categorySet.add(article.category.name);
       }
@@ -259,7 +144,7 @@ const ArticlesContent = () => {
     
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(article => {
+      filtered = filtered.filter((article: any) => {
         return (
           article.title?.toLowerCase().includes(searchLower) ||
           article.description?.toLowerCase().includes(searchLower) ||
@@ -270,15 +155,15 @@ const ArticlesContent = () => {
     }
     
     if (selectedCategory !== 'All Categories') {
-      filtered = filtered.filter(article => 
+      filtered = filtered.filter((article: any) => 
         article.category?.name === selectedCategory
       );
     }
     
     if (sortBy === 'Newest First') {
-      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else if (sortBy === 'Oldest First') {
-      filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      filtered.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
     
     return filtered;
@@ -307,22 +192,82 @@ const ArticlesContent = () => {
 
   return (
     <div className="min-h-screen bg-white px-4 md:px-6">
-      {/* Article Modal */}
-      <ArticleModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        mode={modalMode}
-        article={selectedArticle}
-      />
-
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={showDeleteConfirm}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        articleTitle={articleToDelete?.title || ''}
-        isDeleting={isDeleting === articleToDelete?.id}
-      />
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Article</h3>
+                  <p className="text-sm text-gray-500">Confirm your action</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-5">
+              <div className="mb-6">
+                <p className="text-gray-700 mb-2">
+                  Are you sure you want to delete this article?
+                </p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {articleToDelete?.title}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    All data associated with this article will be permanently removed.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                disabled={isDeleting === articleToDelete?.id}
+                className="px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting === articleToDelete?.id}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting === articleToDelete?.id ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Article
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
@@ -330,14 +275,13 @@ const ArticlesContent = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Articles</h1>
           <p className="text-gray-500">Manage your travel articles</p>
         </div>
-        <Link href="/articles/add">
-          <button
-            className="flex items-center gap-2 bg-[#1f3a5f] text-white px-5 py-2.5 rounded-xl shadow hover:bg-[#162b47] transition-all cursor-pointer"
-          >
-            <Plus className="w-5 h-5" />
-            New Article
-          </button>
-        </Link>
+        <button
+          onClick={handleCreate}
+          className="flex items-center gap-2 bg-[#1f3a5f] text-white px-5 py-2.5 rounded-xl shadow hover:bg-[#162b47] transition-all cursor-pointer"
+        >
+          <Plus className="w-5 h-5" />
+          New Article
+        </button>
       </div>
 
       {/* Filters */}
@@ -400,7 +344,7 @@ const ArticlesContent = () => {
             {filteredArticles.length} articles found
             {searchTerm && (
               <span className="ml-1">
-                for "{searchTerm}"
+                for {searchTerm}
               </span>
             )}
             {selectedCategory !== 'All Categories' && (
@@ -453,7 +397,7 @@ const ArticlesContent = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredArticles.map((article) => {
+            {filteredArticles.map((article: any) => {
               const categoryColors = getCategoryColor(article.category?.name || '');
               
               return (
@@ -554,10 +498,10 @@ const ArticlesContent = () => {
           </div>
 
           {/* Pagination */}
-          {pagination.pageCount > 1 && (
+          {pagination && pagination.pageCount > 1 && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
-                Showing {filteredArticles.length} of {pagination.totalItems} articles
+                Showing {filteredArticles.length} of {pagination.total || filteredArticles.length} articles
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -617,9 +561,8 @@ const ArticlesContent = () => {
 };
 
 export default function ArticlesPage() {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state: any) => state.auth);
   const [activeMenu, setActiveMenu] = useState('articles');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (!isAuthenticated) {
     return (
@@ -627,15 +570,13 @@ export default function ArticlesPage() {
         <Sidebar 
           activeMenu={activeMenu} 
           setActiveMenu={setActiveMenu}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
         />
         <Header 
           activeMenu={activeMenu}
           userName="Guest"
           userEmail="Silakan login"
-          onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          isSidebarOpen={isSidebarOpen}
+          onSidebarToggle={() => {}}
+          isSidebarOpen={false}
         />
         <main className="flex-1 md:ml-64 pt-16 p-8">
           <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -663,15 +604,13 @@ export default function ArticlesPage() {
       <Sidebar 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
       />
       <Header 
         activeMenu={activeMenu}
         userName={user?.name || 'User'}
         userEmail={user?.email || 'user@example.com'}
-        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSidebarOpen={isSidebarOpen}
+        onSidebarToggle={() => {}}
+        isSidebarOpen={false}
       />
       <main className="md:ml-64 pt-16">
         <div className="p-4 md:p-6">
